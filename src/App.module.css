@@ -2,7 +2,7 @@
 .header { background: rgba(0,0,0,.5); border-bottom: 1px solid rgba(201,168,76,.18); padding: 12px 22px; display: flex; align-items: center; gap: 11px; position: sticky; top: 0; z-index: 10; backdrop-filter: blur(12px); }
 .headerTitle { font-size: 15px; font-weight: 700; color: #c9a84c; }
 .headerSub { font-size: 10px; color: rgba(255,255,255,.3); margin-top: 2px; }
-.main { max-width: 800px; margin: 0 auto; padding: 22px 16px; }
+.main { max-width: 860px; margin: 0 auto; padding: 22px 16px; }
 
 /* ── Steps ── */
 .steps { display: flex; align-items: center; gap: 4px; margin-bottom: 22px; flex-wrap: wrap; }
@@ -50,20 +50,24 @@
 .filePreview { margin-top: 11px; background: rgba(255,255,255,.03); border: 1px solid rgba(201,168,76,.15); border-radius: 7px; padding: 10px 13px; display: flex; align-items: center; gap: 9px; }
 .errorBox { padding: 8px 12px; background: rgba(184,76,76,.1); border: 1px solid rgba(184,76,76,.28); border-radius: 7px; font-size: 12px; color: #c88080; margin-top: 9px; }
 
-/* ── Info grid ── */
+/* ── Info grid (verify) ── */
 .infoGrid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 14px; }
 .infoItem { background: rgba(255,255,255,.025); border: 1px solid rgba(255,255,255,.05); border-radius: 7px; padding: 8px 10px; }
 .infoKey { font-size: 9px; color: rgba(255,255,255,.28); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; }
 .infoVal { font-size: 12px; font-weight: 600; color: #e8c060; }
 .sectionLabel { font-size: 9px; font-weight: 700; color: rgba(255,255,255,.25); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
 
-/* ── Cung grid ── */
-.cungGrid { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; margin-bottom: 12px; }
-.cungCard { background: rgba(255,255,255,.025); border: 1px solid rgba(255,255,255,.06); border-radius: 7px; padding: 8px; min-height: 72px; }
-.cungMenh { background: rgba(201,168,76,.07) !important; border-color: rgba(201,168,76,.28) !important; }
-.cungName { font-size: 8px; font-weight: 700; color: #c9a84c; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; }
-.cungChi { font-size: 11px; font-weight: 600; color: #e8c97a; margin-bottom: 2px; }
-.cungSao { font-size: 9px; color: rgba(255,255,255,.36); line-height: 1.4; }
+/* ── Cung grid 4x3 ── */
+.cungGrid { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; margin-bottom: 12px; }
+.cungCard { background: rgba(255,255,255,.025); border: 1px solid rgba(255,255,255,.07); border-radius: 9px; padding: 10px; min-height: 90px; position: relative; transition: all .2s; }
+.cungCard:hover { background: rgba(255,255,255,.045); border-color: rgba(201,168,76,.2); }
+.cungMenh { background: rgba(201,168,76,.09) !important; border-color: rgba(201,168,76,.35) !important; box-shadow: 0 0 12px rgba(201,168,76,.1); }
+.cungName { font-size: 8.5px; font-weight: 700; color: #c9a84c; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 3px; }
+.cungChi { font-size: 12px; font-weight: 700; color: #e8c97a; margin-bottom: 4px; }
+.cungSaoWrap { display: flex; flex-wrap: wrap; gap: 2px; }
+.cungSaoItem { font-size: 9px; color: rgba(255,255,255,.5); background: rgba(255,255,255,.04); border-radius: 3px; padding: 1px 4px; line-height: 1.4; }
+.cungSaoItemMieu { color: #e8a060; background: rgba(232,160,96,.08); }
+.cungSaoItemHam { color: rgba(255,255,255,.3); font-style: italic; }
 
 /* ── Loading ── */
 .loadingWrap { text-align: center; padding: 48px 16px; }
@@ -81,51 +85,94 @@
 .tagPulse { animation: pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
-/* ── Result ── */
-.resultHeader { background: linear-gradient(135deg,rgba(201,168,76,.07),rgba(201,168,76,.02)); border: 1px solid rgba(201,168,76,.18); border-radius: 11px; padding: 18px 20px; margin-bottom: 13px; display: flex; justify-content: space-between; align-items: flex-start; gap: 13px; flex-wrap: wrap; }
-.resultName { font-size: 20px; font-weight: 700; color: #c9a84c; margin-bottom: 3px; }
-.resultMeta { font-size: 12px; color: rgba(255,255,255,.4); }
-.resultQuote { font-size: 12px; color: rgba(255,255,255,.5); font-style: italic; margin-top: 7px; }
-.statGrid { display: flex; gap: 14px; flex-wrap: wrap; }
-.statVal { font-size: 18px; font-weight: 700; color: #e8c97a; text-align: center; }
-.statLabel { font-size: 9px; color: rgba(255,255,255,.3); text-transform: uppercase; letter-spacing: .4px; text-align: center; }
+/* ══════════════════════════════════════
+   RESULT SCREEN
+══════════════════════════════════════ */
 
-/* ── Highlights ── */
-.hlGrid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 13px; }
-.hlItem { background: rgba(255,255,255,.025); border-radius: 8px; padding: 11px; border: 1px solid rgba(255,255,255,.05); }
-.hlGold { border-color: rgba(201,168,76,.22) !important; }
-.hlTeal { border-color: rgba(42,122,122,.22) !important; }
-.hlRed  { border-color: rgba(184,76,76,.22)  !important; }
-.hlKey { font-size: 9px; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; font-weight: 700; }
-.hlVal { font-size: 12px; color: rgba(255,255,255,.65); line-height: 1.5; }
+/* Tổng quan header */
+.resultHeader { background: linear-gradient(135deg,rgba(201,168,76,.08),rgba(201,168,76,.02)); border: 1px solid rgba(201,168,76,.2); border-radius: 13px; padding: 22px 24px; margin-bottom: 16px; }
+.resultName { font-size: 22px; font-weight: 700; color: #c9a84c; margin-bottom: 4px; letter-spacing: -.3px; }
+.resultMeta { font-size: 12px; color: rgba(255,255,255,.4); margin-bottom: 16px; }
+.resultQuote { font-size: 13px; color: rgba(255,255,255,.55); font-style: italic; margin-top: 8px; padding: 10px 14px; border-left: 2px solid rgba(201,168,76,.4); background: rgba(201,168,76,.04); border-radius: 0 6px 6px 0; }
 
-/* ── Tabs ── */
-.tabs { display: flex; gap: 6px; margin-bottom: 13px; flex-wrap: wrap; }
-.tab { padding: 6px 13px; border-radius: 15px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid; transition: all .2s; }
+/* Chỉ số tổng quan dạng grid đẹp */
+.statGrid { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-top: 16px; }
+.statCard { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 10px; padding: 12px 8px; text-align: center; }
+.statVal { font-size: 26px; font-weight: 700; color: #e8c97a; line-height: 1; margin-bottom: 4px; }
+.statBar { height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; margin: 6px 4px; overflow: hidden; }
+.statBarFill { height: 100%; border-radius: 2px; background: linear-gradient(90deg,#b8942a,#d4aa50); transition: width .8s ease; }
+.statLabel { font-size: 10px; color: rgba(255,255,255,.35); text-transform: uppercase; letter-spacing: .4px; }
+
+/* Highlights 3 cột */
+.hlGrid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px; }
+.hlItem { background: rgba(255,255,255,.025); border-radius: 9px; padding: 13px; border: 1px solid rgba(255,255,255,.06); }
+.hlGold { border-color: rgba(201,168,76,.25) !important; background: rgba(201,168,76,.04) !important; }
+.hlTeal { border-color: rgba(42,122,122,.25) !important; background: rgba(42,122,122,.04) !important; }
+.hlRed  { border-color: rgba(184,76,76,.25) !important;  background: rgba(184,76,76,.04)  !important; }
+.hlKey { font-size: 9px; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; font-weight: 700; }
+.hlVal { font-size: 12px; color: rgba(255,255,255,.65); line-height: 1.55; }
+
+/* ── Ngũ hành radar ── */
+.nguHanhWrap { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; align-items: center; }
+.nguHanhBars { display: flex; flex-direction: column; gap: 8px; }
+.nguHanhRow { display: flex; align-items: center; gap: 10px; }
+.nguHanhLabel { width: 36px; font-size: 11px; font-weight: 600; color: rgba(255,255,255,.7); flex-shrink: 0; }
+.nguHanhTrack { flex: 1; height: 8px; background: rgba(255,255,255,.06); border-radius: 4px; overflow: hidden; }
+.nguHanhFill { height: 100%; border-radius: 4px; transition: width .8s ease; }
+.nguHanhScore { width: 28px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,.6); text-align: right; flex-shrink: 0; }
+
+/* ── Timeline đại vận ── */
+.vanTimeline { display: flex; flex-direction: column; gap: 0; margin-bottom: 16px; }
+.vanItem { display: flex; gap: 0; position: relative; }
+.vanItem:not(:last-child) .vanLine { background: rgba(255,255,255,.08); }
+.vanLeft { width: 80px; flex-shrink: 0; text-align: right; padding-right: 16px; padding-top: 14px; }
+.vanAge { font-size: 11px; font-weight: 700; color: #c9a84c; }
+.vanCanChi { font-size: 10px; color: rgba(255,255,255,.35); margin-top: 2px; }
+.vanCenter { display: flex; flex-direction: column; align-items: center; width: 20px; flex-shrink: 0; }
+.vanDot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid; flex-shrink: 0; margin-top: 16px; z-index: 1; }
+.vanDotCurrent { box-shadow: 0 0 10px currentColor; }
+.vanLine { width: 2px; flex: 1; margin-top: 2px; }
+.vanRight { flex: 1; padding: 10px 0 20px 16px; }
+.vanCard { border-radius: 9px; padding: 12px 14px; border: 1px solid; }
+.vanCardTitle { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+.vanCardTheme { font-size: 11px; opacity: .7; margin-bottom: 6px; }
+.vanCardBadge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 8px; text-transform: uppercase; letter-spacing: .5px; }
+
+/* ── Tabs phần phân tích ── */
+.tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.tab { padding: 7px 14px; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid; transition: all .2s; }
 .tabA { background: rgba(201,168,76,.16); border-color: rgba(201,168,76,.42); color: #e8c97a; }
 .tabN { background: rgba(255,255,255,.025); border-color: rgba(255,255,255,.07); color: rgba(255,255,255,.38); }
 .tabN:hover { background: rgba(255,255,255,.05); }
 
-/* ── Mục ── */
-.secTitle { font-size: 16px; font-weight: 700; color: #c9a84c; margin-bottom: 13px; }
-.mucItem { border-bottom: 1px solid rgba(255,255,255,.04); padding: 13px 0; }
+/* ── Section header (tiêu đề lớn) ── */
+.secHeader { background: linear-gradient(135deg,rgba(201,168,76,.12),rgba(201,168,76,.04)); border: 1px solid rgba(201,168,76,.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+.secIcon { font-size: 24px; }
+.secTitle { font-size: 17px; font-weight: 700; color: #c9a84c; }
+.secCount { font-size: 11px; color: rgba(255,255,255,.35); margin-top: 2px; }
+
+/* ── Mục items (từng mục 1 từ trên xuống) ── */
+.mucList { display: flex; flex-direction: column; gap: 0; }
+.mucItem { border-bottom: 1px solid rgba(255,255,255,.05); padding: 16px 0; }
 .mucItem:last-child { border-bottom: none; }
-.mucHeader { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.mucHeader { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .mucContent { flex: 1; }
-.mucNum { font-size: 9px; color: #c9a84c; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 3px; }
-.mucTitle { font-size: 14px; font-weight: 600; color: #e8e0d0; margin-bottom: 6px; }
-.mucBody { font-size: 13px; color: rgba(255,255,255,.58); line-height: 1.78; }
-.mucAdvice { background: rgba(201,168,76,.055); border: 1px solid rgba(201,168,76,.15); border-radius: 5px; padding: 8px 11px; font-size: 12px; color: rgba(255,255,255,.5); margin-top: 8px; line-height: 1.6; }
-.scoreRing { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; border-radius: 50%; border: 2px solid #c9a84c; font-size: 13px; font-weight: 700; color: #c9a84c; flex-shrink: 0; }
+.mucNum { font-size: 9px; color: #c9a84c; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 4px; }
+.mucTitle { font-size: 15px; font-weight: 700; color: #e8e0d0; margin-bottom: 8px; line-height: 1.4; }
+.mucBody { font-size: 13px; color: rgba(255,255,255,.6); line-height: 1.8; white-space: pre-line; }
+.mucAdvice { background: rgba(201,168,76,.06); border-left: 3px solid rgba(201,168,76,.4); padding: 9px 13px; font-size: 12px; color: rgba(255,255,255,.55); margin-top: 10px; line-height: 1.65; border-radius: 0 6px 6px 0; }
+.scoreRing { display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; border-radius: 50%; border: 2px solid #c9a84c; font-size: 14px; font-weight: 700; color: #c9a84c; flex-shrink: 0; }
 .scoreHi { border-color: #58a8a8 !important; color: #58a8a8 !important; }
 .scoreLo { border-color: #c07070 !important; color: #c07070 !important; }
 
 /* ── Responsive ── */
-@media (max-width: 560px) {
+@media (max-width: 600px) {
   .formGrid { grid-template-columns: 1fr; }
   .full { grid-column: 1; }
   .cungGrid { grid-template-columns: repeat(2,1fr); }
   .hlGrid { grid-template-columns: 1fr; }
   .infoGrid { grid-template-columns: 1fr 1fr; }
-  .statGrid { gap: 10px; }
+  .statGrid { grid-template-columns: repeat(3,1fr); }
+  .nguHanhWrap { grid-template-columns: 1fr; }
+  .vanLeft { width: 60px; }
 }
