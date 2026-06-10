@@ -1,11 +1,12 @@
-const WORKER_URL = 'https://tuvi-proxy.dongythuanthien2023.workers.dev'
+const WORKER_URL = 'https://tuvi-proxy-v2.dongythuanthien2023.workers.dev'
 
 export async function callClaude(messages, maxTokens = 4000) {
   const res = await fetch(WORKER_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-model: 'claude-haiku-4-5-20251001',      max_tokens: maxTokens,
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: maxTokens,
       messages,
     }),
   })
