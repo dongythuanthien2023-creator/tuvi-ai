@@ -54,7 +54,7 @@ function InfoForm({ onNext }) {
   return (
     <div className={styles.card}>
       <div className={styles.cardTitle}>✦ Thông tin cơ bản</div>
-      <div className={styles.cardSub}>Nhập thông tin khách hàng. Sau đó upload ảnh chụp lá số từ luangiai.vn để Claude tự đọc và phân tích 100 mục.</div>
+      <div className={styles.cardSub}>Nhập thông tin khách hàng. Sau đó upload ảnh/file lá số tử vi để nhận phân tích.</div>
       <div className={styles.formGrid}>
         <div className={`${styles.fg} ${styles.full}`}>
           <label className={styles.label}>Họ và tên *</label>
@@ -124,7 +124,7 @@ function UploadScreen({ onBack, onDone, info }) {
   return (
     <div className={styles.card}>
       <div className={styles.cardTitle}>☁ Upload lá số Tử Vi</div>
-      <div className={styles.cardSub}>Vào <strong style={{color:'#c9a84c'}}>luangiai.vn</strong> lập lá số → chụp màn hình hoặc xuất PDF → upload vào đây. Claude sẽ tự đọc và trích xuất toàn bộ thông tin 12 cung.</div>
+      <div className={styles.cardSub}>Upload ảnh chụp màn hình hoặc file PDF lá số tử vi vào đây. Hệ thống sẽ tự đọc và trích xuất toàn bộ thông tin 12 cung.</div>
       <div className={`${styles.uploadZone}${drag?' '+styles.drag:''}`}
         onClick={() => fileRef.current.click()}
         onDragOver={e=>{e.preventDefault();setDrag(true)}}
@@ -481,8 +481,8 @@ export default function App() {
       <div className={`${styles.header} no-print`}>
         <div style={{fontSize:22}}>☯</div>
         <div>
-          <div className={styles.headerTitle}>Tử Vi AI · Công cụ Luận Giải Chuyên Nghiệp</div>
-          <div className={styles.headerSub}>Phân tích 100 mục · Upload lá số → Claude tự đọc & phân tích</div>
+          <div className={styles.headerTitle}>TỬ VI BY THÔI · Luận Giải Chuyên Nghiệp</div>
+          <div className={styles.headerSub}>Phân tích 100 mục cho cuộc sống · Tham khảo · Suy ngẫm · Vận mệnh do mình</div>
         </div>
       </div>
       <div className={styles.main}>
