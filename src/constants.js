@@ -19,8 +19,8 @@ export const CUNGS = [
   'Quan Lộc','Điền Trạch','Phúc Đức','Phụ Mẫu',
 ]
 
-export const STEPS = ['info','upload','verify','analyzing','result']
-export const STEP_LABELS = ['Thông tin','Lá số','Xác nhận','Phân tích','Kết quả']
+export const STEPS = ['info','verify','analyzing','result']
+export const STEP_LABELS = ['Thông tin','Lá số','Phân tích','Kết quả']
 
 export const SECTIONS = [
   { k: 'phan1', l: 'Cốt cách & Nội tâm',      i: '🧠' },
@@ -30,31 +30,30 @@ export const SECTIONS = [
   { k: 'phan5', l: 'Định hướng & Hành động',    i: '🎯' },
 ]
 
-export const EXTRACT_PROMPT = (info) => `Đọc lá số Tử Vi trong ảnh/file này. Trả về JSON thuần (không markdown, không giải thích thêm):
-{
-  "amLich":{"nam":"","thang":"","ngay":"","gio":""},
-  "canChi":{"nam":"","thang":"","ngay":"","gio":""},
-  "menhCung":{"cung":"","chi":""},
-  "thanCung":{"cung":"","chi":""},
-  "cuc":"","banMenh":"","menhChu":"","thanChu":"","amDuong":"","tuoi":"","namXem":"",
-  "cacCung":{
-    "Mệnh":{"chi":"","hanh":"","sao":[]},"Huynh Đệ":{"chi":"","hanh":"","sao":[]},
-    "Phu Thê":{"chi":"","hanh":"","sao":[]},"Tử Tức":{"chi":"","hanh":"","sao":[]},
-    "Tài Bạch":{"chi":"","hanh":"","sao":[]},"Tật Ách":{"chi":"","hanh":"","sao":[]},
-    "Thiên Di":{"chi":"","hanh":"","sao":[]},"Nô Bộc":{"chi":"","hanh":"","sao":[]},
-    "Quan Lộc":{"chi":"","hanh":"","sao":[]},"Điền Trạch":{"chi":"","hanh":"","sao":[]},
-    "Phúc Đức":{"chi":"","hanh":"","sao":[]},"Phụ Mẫu":{"chi":"","hanh":"","sao":[]}
-  }
-}
-Thông tin đã biết: ${info.hoTen}, ${info.ngaySinh}, giờ ${info.gioSinh}, ${info.gioiTinh}.`
 
 // ── Context dùng chung cho mọi phần ─────────────────────────────────────────
-const LASO_CONTEXT = (info, ls) => `THÔNG TIN: ${info.hoTen} | ${info.ngaySinh} | Giờ ${info.gioSinh} | ${info.gioiTinh}
-Âm lịch: ${ls.amLich?.ngay}/${ls.amLich?.thang}/${ls.amLich?.nam} | Cục: ${ls.cuc} | Bản mệnh: ${ls.banMenh} | Âm dương: ${ls.amDuong}
-Mệnh chủ: ${ls.menhChu} | Thân chủ: ${ls.thanChu}
-Mệnh: ${ls.menhCung?.cung} tại ${ls.menhCung?.chi} | Thân: ${ls.thanCung?.cung} tại ${ls.thanCung?.chi}
-Tuổi: ${ls.tuoi} | Năm xem: ${ls.namXem}
-12 CUNG: ${JSON.stringify(ls.cacCung)}`
+const fmt12Cung = (ls) => {
+  const order = ['Tý','Sửu','Dần','Mão','Thìn','Tỵ','Ngọ','Mùi','Thân','Dậu','Tuất','Hợi']
+  return order.map(chi => {
+    const c = ls.cacCung[chi]
+    if (!c) return ''
+    let flags = []
+    if (c.than) flags.push('Thân cư đây')
+    if (c.tuan) flags.push('Tuần')
+    if (c.triet) flags.push('Triệt')
+    const dv = c.daiVan ? ` [Đại vận ${c.daiVan[0]}-${c.daiVan[1]} tuổi]` : ''
+    const fl = flags.length ? ` (${flags.join(', ')})` : ''
+    return `- ${c.cung} tại ${chi}${fl}${dv}: ${c.sao.join(', ')}`
+  }).filter(Boolean).join('\n')
+}
+
+const LASO_CONTEXT = (info, ls) => `THÔNG TIN KHÁCH: ${info.hoTen} | Giới tính: ${info.gioiTinh} | Năm xem: ${info.namXem||new Date().getFullYear()}
+Âm lịch: ${ls.amLich.ngay}/${ls.amLich.thang}/${ls.amLich.nam} | Can Chi: ${ls.canChiNam}
+Âm dương: ${ls.amDuong} | Bản mệnh: ${ls.banMenh} | Cục: ${ls.cuc}
+Mệnh tại ${ls.menhCung} | Thân cư cung ${ls.thanCu} (${ls.thanCung})
+
+CHI TIẾT 12 CUNG (kèm sao và đại vận):
+${fmt12Cung(ls)}`
 
 const PHONG_CACH = `YÊU CẦU PHONG CÁCH:
 - Ngôn ngữ gần gũi, hiện đại, phù hợp người trẻ 20-35 tuổi — KHÔNG dùng văn phong cổ điển khô khan
@@ -130,8 +129,8 @@ DANH SÁCH 30 MỤC:
 37. Vận may tài chính — Hoạnh tài, thừa kế, may mắn bất ngờ
 38. Điền sản & Bất động sản — Thời điểm và khả năng sở hữu nhà đất
 39. Rủi ro tài chính — Những cạm bẫy tiền bạc cần phòng ngừa
-40. Tài lộc năm ${ls.namXem} — Dự báo tài chính năm nay cụ thể
-41. Sự nghiệp năm ${ls.namXem} — Cơ hội và thách thức công việc năm nay
+40. Tài lộc năm ${info.namXem||new Date().getFullYear()} — Dự báo tài chính năm nay cụ thể
+41. Sự nghiệp năm ${info.namXem||new Date().getFullYear()} — Cơ hội và thách thức công việc năm nay
 42. Quý nhân phù trợ — Ai sẽ giúp bạn tiến lên trong sự nghiệp?
 43. Tiểu nhân & kẻ thù — Ai cần đề phòng trong môi trường làm việc?
 44. Xuất ngoại & cơ hội xa nhà — Bạn có lợi khi đi xa không?
@@ -164,7 +163,7 @@ DANH SÁCH 20 MỤC:
 58. Hôn nhân — Chất lượng cuộc sống hôn nhân của bạn
 59. Người bạn đời — Người đó trông như thế nào về tính cách và cuộc sống?
 60. Thách thức hôn nhân — Những giai đoạn sóng gió cần chuẩn bị
-61. Tình duyên năm ${ls.namXem} — Dự báo cụ thể về tình cảm năm nay
+61. Tình duyên năm ${info.namXem||new Date().getFullYear()} — Dự báo cụ thể về tình cảm năm nay
 62. Con cái — Duyên phận và mối quan hệ với con
 63. Tính cách & tương lai con cái — Con bạn sẽ là người như thế nào?
 64. Quan hệ cha mẹ — Bạn và cha mẹ có mối dây như thế nào?
@@ -196,11 +195,11 @@ DANH SÁCH 20 MỤC:
 77. Giấc ngủ & Phục hồi — Nhịp sinh học và cách nạp năng lượng
 78. Cảnh báo tai nạn & Rủi ro ngoại cảnh — Thời điểm và hoàn cảnh cần cẩn thận
 79. Phương pháp YHCT phù hợp — Châm cứu, thảo dược, dưỡng sinh nào hiệu quả nhất?
-80. Sức khỏe năm ${ls.namXem} — Dự báo sức khỏe cụ thể năm nay
+80. Sức khỏe năm ${info.namXem||new Date().getFullYear()} — Dự báo sức khỏe cụ thể năm nay
 81. Tiền vận (đến nay) — Nhìn lại hành trình từ nhỏ đến hiện tại
 82. Đại vận hiện tại — Đang ở đâu, cơ hội và thách thức chính
-83. Vận hạn 3 năm tới — Dự báo ${parseInt(ls.namXem)||2026}–${(parseInt(ls.namXem)||2026)+2}
-84. Năm ${ls.namXem} chi tiết — Tháng nào tốt, tháng nào cần cẩn thận?
+83. Vận hạn 3 năm tới — Dự báo ${parseInt(info.namXem||new Date().getFullYear())||2026}–${(parseInt(info.namXem||new Date().getFullYear())||2026)+2}
+84. Năm ${info.namXem||new Date().getFullYear()} chi tiết — Tháng nào tốt, tháng nào cần cẩn thận?
 85. Tam tai & Xung hạn — Những năm cần đặc biệt thận trọng
 86. Năm hoàng kim gần nhất — Khi nào vận khí đạt đỉnh?
 87. Hậu vận — Cuộc sống sau 50 tuổi sẽ như thế nào?
@@ -216,7 +215,7 @@ ${LASO_CONTEXT(info, ls)}
 ${PHONG_CACH}
 
 Trả về JSON thuần (KHÔNG markdown), gồm 10 mục VÀ phần tongQuan:
-{"title":"Định Hướng & Hành Động","muc":[ ... 10 mục ... ],"tongQuan":{"sucNghiep":<1-10>,"taiLoc":<1-10>,"tinhDuyen":<1-10>,"giaDao":<1-10>,"sucKhoe":<1-10>,"giaiDoanVang":"<mô tả ngắn>","diemManhNhat":"<1 câu>","diemYeuNhat":"<1 câu>","tomluat":"<1 câu tổng kết đặc trưng nhất>","thongDiepNam":"<thông điệp quan trọng nhất cho năm ${ls.namXem}>"}}
+{"title":"Định Hướng & Hành Động","muc":[ ... 10 mục ... ],"tongQuan":{"sucNghiep":<1-10>,"taiLoc":<1-10>,"tinhDuyen":<1-10>,"giaDao":<1-10>,"sucKhoe":<1-10>,"giaiDoanVang":"<mô tả ngắn>","diemManhNhat":"<1 câu>","diemYeuNhat":"<1 câu>","tomluat":"<1 câu tổng kết đặc trưng nhất>","thongDiepNam":"<thông điệp quan trọng nhất cho năm ${info.namXem||new Date().getFullYear()}>"}}
 ${MUC_FORMAT}
 
 DANH SÁCH 10 MỤC:
