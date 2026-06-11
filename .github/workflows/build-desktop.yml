@@ -1,11 +1,10 @@
 name: Build Desktop App
 
-# Chạy khi Thôi tạo một tag bắt đầu bằng "v" (ví dụ v1.0.0)
 on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:   # cho phép bấm chạy thủ công trên GitHub
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -19,7 +18,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-     - run: npm install
+      - run: npm install
       - name: Build app Windows (.exe)
         run: npm run electron:build
       - name: Đăng file cài đặt lên Releases
@@ -28,5 +27,3 @@ jobs:
         with:
           files: |
             release/*.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
