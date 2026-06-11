@@ -200,3 +200,9 @@
   .nguHanhWrap { grid-template-columns: 1fr; }
   .vanLeft { width: 60px; }
 }
+
+/* Nút cài đặt + Modal (desktop) */
+.settingsBtn { background: rgba(201,168,76,.1); border: 1px solid rgba(201,168,76,.25); color: #c9a84c; width: 38px; height: 38px; border-radius: 9px; font-size: 18px; cursor: pointer; transition: all .2s; flex-shrink: 0; }
+.settingsBtn:hover { background: rgba(201,168,76,.2); transform: rotate(45deg); }
+.modalOverlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.modalBox { background: linear-gradient(160deg,#1a1a2e,#16162a); border: 1px solid rgba(201,168,76,.25); border-radius: 16px; padding: 28px; max-width: 460px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
