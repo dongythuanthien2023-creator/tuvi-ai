@@ -48,76 +48,36 @@ export const EXTRACT_PROMPT = (info) => `Đọc lá số Tử Vi trong ảnh/fil
 }
 Thông tin đã biết: ${info.hoTen}, ${info.ngaySinh}, giờ ${info.gioSinh}, ${info.gioiTinh}.`
 
-export const ANALYZE_PROMPT = (info, ls) => `Bạn là chuyên gia Tử Vi kết hợp Y học cổ truyền, chuyên tư vấn cho người trẻ 20–35 tuổi.
-
-== DỮ LIỆU LÁ SỐ ==
-Họ tên: ${info.hoTen} | Ngày sinh: ${info.ngaySinh} | Giờ: ${info.gioSinh} | ${info.gioiTinh}
-Âm lịch: ${ls.amLich?.ngay}/${ls.amLich?.thang}/${ls.amLich?.nam} | Giờ: ${ls.canChi?.gio}
-Cục: ${ls.cuc} | Bản mệnh: ${ls.banMenh} | Âm dương: ${ls.amDuong}
+// ── Context dùng chung cho mọi phần ─────────────────────────────────────────
+const LASO_CONTEXT = (info, ls) => `THÔNG TIN: ${info.hoTen} | ${info.ngaySinh} | Giờ ${info.gioSinh} | ${info.gioiTinh}
+Âm lịch: ${ls.amLich?.ngay}/${ls.amLich?.thang}/${ls.amLich?.nam} | Cục: ${ls.cuc} | Bản mệnh: ${ls.banMenh} | Âm dương: ${ls.amDuong}
 Mệnh chủ: ${ls.menhChu} | Thân chủ: ${ls.thanChu}
-Mệnh: ${ls.menhCung?.cung} tại ${ls.menhCung?.chi}
-Thân: ${ls.thanCung?.cung} tại ${ls.thanCung?.chi}
+Mệnh: ${ls.menhCung?.cung} tại ${ls.menhCung?.chi} | Thân: ${ls.thanCung?.cung} tại ${ls.thanCung?.chi}
 Tuổi: ${ls.tuoi} | Năm xem: ${ls.namXem}
-12 CUNG: ${JSON.stringify(ls.cacCung)}
+12 CUNG: ${JSON.stringify(ls.cacCung)}`
 
-== YÊU CẦU PHONG CÁCH ==
-- Ngôn ngữ gần gũi, hiện đại — phù hợp người trẻ, KHÔNG dùng văn phong cổ điển khô khan
-- Mỗi mục: luận giải từ SAO + CUNG cụ thể → liên hệ thực tế cuộc sống người trẻ ngay hôm nay
-- Lời khuyên PHẢI cụ thể, có thể thực hiện ngay — không chung chung
+const PHONG_CACH = `YÊU CẦU PHONG CÁCH:
+- Ngôn ngữ gần gũi, hiện đại, phù hợp người trẻ 20-35 tuổi — KHÔNG dùng văn phong cổ điển khô khan
+- Mỗi mục: luận giải từ SAO + CUNG cụ thể → liên hệ thực tế cuộc sống người trẻ hôm nay
+- Lời khuyên PHẢI cụ thể, thực hiện được ngay — không chung chung
 - Khi liên quan sức khỏe: tích hợp góc nhìn Y học cổ truyền (ngũ hành, tạng phủ, thực dưỡng)
-- Điểm mạnh phải nói thẳng để người nghe tự tin; điểm yếu phải nói thật nhưng có hướng khắc phục
-- Kết quả dùng để tư vấn trực tiếp 1-1, sau đó gửi PDF cho khách — viết đủ để Thôi đọc và diễn giải
+- Điểm mạnh nói thẳng để tự tin; điểm yếu nói thật nhưng kèm hướng khắc phục
+- Mỗi mục viết 3-4 đoạn có chiều sâu, có ví dụ thực tế`
 
-== CẤU TRÚC JSON BẮT BUỘC ==
+const MUC_FORMAT = `Mỗi mục có cấu trúc: {"so":<số>,"ten":"<tên mục>","diem":<1-10>,"tags":["sao liên quan"],"noidung":"<3-4 đoạn phân tích chi tiết>","loiKhuyen":"<lời khuyên cụ thể>","canhBao":"<rủi ro cần tránh, để trống nếu không có>"}`
+
+// ── PHẦN 1: Mục 1-20 ────────────────────────────────────────────────────────
+export const PROMPT_PHAN1 = (info, ls) => `Bạn là chuyên gia Tử Vi kết hợp Y học cổ truyền. Phân tích PHẦN 1 (Cốt Cách & Nội Tâm) cho lá số sau.
+
+${LASO_CONTEXT(info, ls)}
+
+${PHONG_CACH}
+
 Trả về JSON thuần (KHÔNG markdown):
-{
-  "phan1": {
-    "title": "Cốt Cách & Nội Tâm",
-    "muc": [
-      {
-        "so": 1,
-        "ten": "Tổng quan Cục diện — Bạn là kiểu người như thế nào?",
-        "diem": 8,
-        "tags": ["tên sao chính", "cung liên quan"],
-        "noidung": "3-4 đoạn: (1) Luận giải từ sao/cung cụ thể. (2) Biểu hiện trong cuộc sống thực tế của người trẻ. (3) Điểm sáng cần phát huy. (4) Điểm mù cần nhận ra.",
-        "loiKhuyen": "1-2 hành động cụ thể, thực tế, có thể làm ngay tuần này",
-        "canhBao": "Rủi ro cụ thể cần tránh nếu bỏ qua điểm yếu này (để trống nếu không có)"
-      }
-    ]
-  },
-  "phan2": {
-    "title": "Sự Nghiệp & Tài Lộc",
-    "muc": [... mục 21-50]
-  },
-  "phan3": {
-    "title": "Tình Duyên & Gia Đạo",
-    "muc": [... mục 51-70]
-  },
-  "phan4": {
-    "title": "Sức Khỏe & Vận Hạn",
-    "muc": [... mục 71-90]
-  },
-  "phan5": {
-    "title": "Định Hướng & Hành Động",
-    "muc": [... mục 91-100]
-  },
-  "tongQuan": {
-    "sucNghiep": 8,
-    "taiLoc": 7,
-    "tinhDuyen": 6,
-    "giaDao": 7,
-    "sucKhoe": 7,
-    "giaiDoanVang": "Mô tả ngắn giai đoạn thuận lợi nhất",
-    "diemManhNhat": "1 câu mô tả điểm mạnh cốt lõi nhất",
-    "diemYeuNhat": "1 câu mô tả điểm yếu quan trọng nhất cần khắc phục",
-    "tomluat": "1 câu tổng kết đặc trưng nhất về con người này",
-    "thongDiepNam": "Thông điệp quan trọng nhất cho năm ${ls.namXem}"
-  }
-}
+{"title":"Cốt Cách & Nội Tâm","muc":[ ... 20 mục ... ]}
+${MUC_FORMAT}
 
-== DANH SÁCH 100 MỤC ==
-
-PHẦN 1 — CỐT CÁCH & NỘI TÂM (mục 1–20):
+DANH SÁCH 20 MỤC:
 1. Tổng quan Cục diện — Bạn là kiểu người như thế nào?
 2. Ngoại hình & Khí chất — Ấn tượng đầu tiên bạn tạo ra
 3. Điểm mạnh tính cách — Những gì bạn làm tốt hơn 90% người khác
@@ -137,9 +97,20 @@ PHẦN 1 — CỐT CÁCH & NỘI TÂM (mục 1–20):
 17. Mệnh chủ & Thân chủ — Hai sức mạnh định hình cuộc đời bạn
 18. Tương quan Mệnh – Cục — Thuận hay nghịch, và ý nghĩa với cuộc sống
 19. Phúc đức tiền định — Nền tảng tâm linh và nghiệp quả
-20. Hình mẫu lý tưởng — Phiên bản tốt nhất của chính bạn
+20. Hình mẫu lý tưởng — Phiên bản tốt nhất của chính bạn`
 
-PHẦN 2 — SỰ NGHIỆP & TÀI LỘC (mục 21–50):
+// ── PHẦN 2: Mục 21-50 ───────────────────────────────────────────────────────
+export const PROMPT_PHAN2 = (info, ls) => `Bạn là chuyên gia Tử Vi kết hợp Y học cổ truyền. Phân tích PHẦN 2 (Sự Nghiệp & Tài Lộc) cho lá số sau.
+
+${LASO_CONTEXT(info, ls)}
+
+${PHONG_CACH}
+
+Trả về JSON thuần (KHÔNG markdown):
+{"title":"Sự Nghiệp & Tài Lộc","muc":[ ... 30 mục ... ]}
+${MUC_FORMAT}
+
+DANH SÁCH 30 MỤC:
 21. Lĩnh vực phù hợp nhất — Bạn sinh ra để làm gì?
 22. Phong cách làm việc — Bạn hiệu quả nhất trong môi trường nào?
 23. Năng lực lãnh đạo — Bạn có khả năng dẫn dắt người khác không?
@@ -169,9 +140,20 @@ PHẦN 2 — SỰ NGHIỆP & TÀI LỘC (mục 21–50):
 47. Hợp tác kinh doanh — Bạn nên hùn vốn với ai và khi nào?
 48. Đại vận hiện tại — Giai đoạn này đang ở đâu trên hành trình?
 49. Giai đoạn vàng sự nghiệp — Khi nào bạn đạt đỉnh cao nhất?
-50. Chiến lược tài chính 5 năm — Bạn nên ưu tiên gì từ bây giờ?
+50. Chiến lược tài chính 5 năm — Bạn nên ưu tiên gì từ bây giờ?`
 
-PHẦN 3 — TÌNH DUYÊN & GIA ĐẠO (mục 51–70):
+// ── PHẦN 3: Mục 51-70 ───────────────────────────────────────────────────────
+export const PROMPT_PHAN3 = (info, ls) => `Bạn là chuyên gia Tử Vi kết hợp Y học cổ truyền. Phân tích PHẦN 3 (Tình Duyên & Gia Đạo) cho lá số sau.
+
+${LASO_CONTEXT(info, ls)}
+
+${PHONG_CACH}
+
+Trả về JSON thuần (KHÔNG markdown):
+{"title":"Tình Duyên & Gia Đạo","muc":[ ... 20 mục ... ]}
+${MUC_FORMAT}
+
+DANH SÁCH 20 MỤC:
 51. Tổng quan duyên phận — Bạn có duyên hay nợ với tình cảm?
 52. Kiểu người bạn hút vào cuộc đời — Đối tượng thường tìm đến bạn
 53. Kiểu người phù hợp nhất — Người như thế nào mới là "đúng người"?
@@ -191,9 +173,20 @@ PHẦN 3 — TÌNH DUYÊN & GIA ĐẠO (mục 51–70):
 67. Gia đình riêng — Mô hình gia đình bạn sẽ xây dựng
 68. Mối quan hệ xã hội — Bạn bè, mạng lưới và chất lượng các mối quan hệ
 69. Kẻ thù & Mâu thuẫn — Những xung đột tiềm ẩn trong cuộc đời
-70. Tình cảm & Hạnh phúc tổng thể — Bạn có được yêu thương đúng nghĩa không?
+70. Tình cảm & Hạnh phúc tổng thể — Bạn có được yêu thương đúng nghĩa không?`
 
-PHẦN 4 — SỨC KHỎE & VẬN HẠN (mục 71–90):
+// ── PHẦN 4: Mục 71-90 ───────────────────────────────────────────────────────
+export const PROMPT_PHAN4 = (info, ls) => `Bạn là chuyên gia Tử Vi kết hợp Y học cổ truyền. Phân tích PHẦN 4 (Sức Khỏe & Vận Hạn) cho lá số sau.
+
+${LASO_CONTEXT(info, ls)}
+
+${PHONG_CACH}
+
+Trả về JSON thuần (KHÔNG markdown):
+{"title":"Sức Khỏe & Vận Hạn","muc":[ ... 20 mục ... ]}
+${MUC_FORMAT}
+
+DANH SÁCH 20 MỤC:
 71. Thể chất tổng thể — Sức khỏe bẩm sinh và nội lực cơ thể
 72. Hệ tạng yếu nhất — Theo ngũ hành YHCT, tạng nào cần chú ý?
 73. Bệnh mãn tính tiềm ẩn — Nguy cơ sức khỏe dài hạn cần phòng ngừa
@@ -201,7 +194,7 @@ PHẦN 4 — SỨC KHỎE & VẬN HẠN (mục 71–90):
 75. Chế độ ăn theo ngũ hành — Thực phẩm nên ăn và nên tránh cho lá số này
 76. Vận động & Luyện tập — Hình thức tập luyện phù hợp nhất
 77. Giấc ngủ & Phục hồi — Nhịp sinh học và cách nạp năng lượng
-78. Cảnh báo tai nạn & Rủi ro ngoại cảnh — Những thời điểm và hoàn cảnh cần cẩn thận
+78. Cảnh báo tai nạn & Rủi ro ngoại cảnh — Thời điểm và hoàn cảnh cần cẩn thận
 79. Phương pháp YHCT phù hợp — Châm cứu, thảo dược, dưỡng sinh nào hiệu quả nhất?
 80. Sức khỏe năm ${ls.namXem} — Dự báo sức khỏe cụ thể năm nay
 81. Tiền vận (đến nay) — Nhìn lại hành trình từ nhỏ đến hiện tại
@@ -213,9 +206,20 @@ PHẦN 4 — SỨC KHỎE & VẬN HẠN (mục 71–90):
 87. Hậu vận — Cuộc sống sau 50 tuổi sẽ như thế nào?
 88. Tuổi thọ & Chất lượng sống — Triển vọng sức khỏe dài hạn
 89. Phong thủy & Không gian sống — Hướng nhà, màu sắc, số phù hợp
-90. Màu sắc & Con số may mắn — Ứng dụng thực tế trong cuộc sống hàng ngày
+90. Màu sắc & Con số may mắn — Ứng dụng thực tế trong cuộc sống hàng ngày`
 
-PHẦN 5 — ĐỊNH HƯỚNG & HÀNH ĐỘNG (mục 91–100):
+// ── PHẦN 5: Mục 91-100 + Tổng Quan ──────────────────────────────────────────
+export const PROMPT_PHAN5 = (info, ls) => `Bạn là chuyên gia Tử Vi kết hợp Y học cổ truyền. Phân tích PHẦN 5 (Định Hướng & Hành Động) + TỔNG QUAN cho lá số sau.
+
+${LASO_CONTEXT(info, ls)}
+
+${PHONG_CACH}
+
+Trả về JSON thuần (KHÔNG markdown), gồm 10 mục VÀ phần tongQuan:
+{"title":"Định Hướng & Hành Động","muc":[ ... 10 mục ... ],"tongQuan":{"sucNghiep":<1-10>,"taiLoc":<1-10>,"tinhDuyen":<1-10>,"giaDao":<1-10>,"sucKhoe":<1-10>,"giaiDoanVang":"<mô tả ngắn>","diemManhNhat":"<1 câu>","diemYeuNhat":"<1 câu>","tomluat":"<1 câu tổng kết đặc trưng nhất>","thongDiepNam":"<thông điệp quan trọng nhất cho năm ${ls.namXem}>"}}
+${MUC_FORMAT}
+
+DANH SÁCH 10 MỤC:
 91. Sứ mệnh cuộc đời — Bạn đến thế gian này để làm gì?
 92. Bài học nghiệp quả — Bạn cần học gì trong kiếp này?
 93. Điểm mạnh tối thượng — Vũ khí mạnh nhất của bạn là gì?
@@ -225,6 +229,4 @@ PHẦN 5 — ĐỊNH HƯỚNG & HÀNH ĐỘNG (mục 91–100):
 97. Lộ trình 5 năm — Bức tranh lớn và chiến lược dài hạn
 98. Quý nhân cần tìm — Kiểu người nào sẽ thay đổi cuộc đời bạn?
 99. Cải mệnh & Tu dưỡng — Thực hành cụ thể để cải thiện vận khí
-100. Thông điệp quan trọng nhất — Một điều bạn nhất định phải nhớ từ lần đọc này
-
-Mỗi mục viết đủ 3-4 đoạn, có chiều sâu, có ví dụ thực tế, không viết chung chung.`
+100. Thông điệp quan trọng nhất — Một điều bạn nhất định phải nhớ từ lần đọc này`
