@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import { callClaude, parseJSON } from './api'
+import { callClaude, parseJSON, settings } from './api'
 import { STEPS, STEP_LABELS, SECTIONS, PROMPT_PHAN1, PROMPT_PHAN2, PROMPT_PHAN3, PROMPT_PHAN4, PROMPT_PHAN5 } from './constants'
 import { lapLaSoAm, GIO_INFO, CHI_NAMES, loaiSao } from './laso-engine'
 import styles from './App.module.css'
@@ -477,6 +477,55 @@ function ResultScreen({ result, info, laSo, onNew }) {
 }
 
 // ── Root App ───────────────────────────────────────────────────────────────
+// ── SettingsModal (chỉ dùng ở desktop) ──────────────────────────────────────
+function SettingsModal({ onClose }) {
+  const [apiKey, setApiKey] = useState('')
+  const [model, setModel]   = useState('claude-sonnet-4-5-20250929')
+  const [saved, setSaved]   = useState(false)
+
+  useState(() => {
+    settings.get().then(s => {
+      if (s.apiKey) setApiKey(s.apiKey)
+      if (s.model) setModel(s.model)
+    })
+  })
+
+  const doSave = async () => {
+    await settings.save({ apiKey: apiKey.trim(), model })
+    setSaved(true)
+    setTimeout(() => { setSaved(false); onClose() }, 800)
+  }
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalBox} onClick={e => e.stopPropagation()}>
+        <div className={styles.cardTitle}>⚙ Cài đặt</div>
+        <div className={styles.cardSub}>API key được lưu an toàn trên máy này, không gửi đi đâu khác.</div>
+        <div className={styles.fg} style={{marginBottom:14}}>
+          <label className={styles.label}>Anthropic API Key</label>
+          <input className={styles.input} type="password" value={apiKey}
+            onChange={e => setApiKey(e.target.value)} placeholder="sk-ant-api03-..." />
+          <div style={{fontSize:11,color:'rgba(255,255,255,.35)',marginTop:5}}>
+            Lấy tại console.anthropic.com → API Keys
+          </div>
+        </div>
+        <div className={styles.fg} style={{marginBottom:18}}>
+          <label className={styles.label}>Model</label>
+          <select className={styles.select} value={model} onChange={e => setModel(e.target.value)}>
+            <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5 (khuyên dùng)</option>
+            <option value="claude-opus-4-1-20250805">Claude Opus 4.1 (sâu hơn, chậm hơn)</option>
+            <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (nhanh, tiết kiệm)</option>
+          </select>
+        </div>
+        <div className={styles.btnRow}>
+          <button className={styles.btnS} onClick={onClose}>Đóng</button>
+          <button className={styles.btnP} onClick={doSave}>{saved ? '✓ Đã lưu' : 'Lưu cài đặt'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const [step, setStep]             = useState('info')
   const [info, setInfo]             = useState(null)
@@ -484,6 +533,7 @@ export default function App() {
   const [result, setResult]         = useState(null)
   const [analyzeErr, setAnalyzeErr] = useState('')
   const [progress, setProgress]     = useState({})
+  const [showSettings, setShowSettings] = useState(false)
 
   const handleInfoNext = useCallback((d) => {
     const withYear = { ...d, namXem: new Date().getFullYear() }
@@ -544,11 +594,15 @@ export default function App() {
     <div>
       <div className={`${styles.header} no-print`}>
         <div style={{fontSize:22}}>☯</div>
-        <div>
+        <div style={{flex:1}}>
           <div className={styles.headerTitle}>TỬ VI BY THÔI · Luận Giải Chuyên Nghiệp</div>
           <div className={styles.headerSub}>Phân tích 100 mục cho cuộc sống · Tham khảo · Suy ngẫm · Vận mệnh do mình</div>
         </div>
+        {settings.isDesktop && (
+          <button className={styles.settingsBtn} onClick={() => setShowSettings(true)} title="Cài đặt">⚙</button>
+        )}
       </div>
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       <div className={styles.main}>
         <StepBar step={step} />
         {step==='info'      && <InfoForm onNext={handleInfoNext} />}
