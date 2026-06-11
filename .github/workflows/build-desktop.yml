@@ -1,0 +1,32 @@
+name: Build Desktop App
+
+# Chạy khi Thôi tạo một tag bắt đầu bằng "v" (ví dụ v1.0.0)
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:   # cho phép bấm chạy thủ công trên GitHub
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Build app Windows (.exe)
+        run: npm run electron:build
+      - name: Đăng file cài đặt lên Releases
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            release/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
