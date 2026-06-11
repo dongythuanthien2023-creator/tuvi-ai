@@ -59,7 +59,20 @@
 
 /* ── Cung grid 4x3 ── */
 .cungGrid { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; margin-bottom: 12px; }
-.cungCard { background: rgba(255,255,255,.025); border: 1px solid rgba(255,255,255,.07); border-radius: 9px; padding: 10px; min-height: 90px; position: relative; transition: all .2s; }
+
+/* Legend chú thích loại sao */
+.legend { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-bottom: 14px; padding: 11px 14px; background: rgba(255,255,255,.025); border: 1px solid rgba(255,255,255,.07); border-radius: 9px; }
+.legendItem { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: rgba(255,255,255,.6); }
+.legendDot { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+.legendUnderline { width: 14px; height: 0; border-bottom: 2px solid rgba(240,208,128,.7); display: inline-block; }
+.legendHam { color: rgba(255,255,255,.4); font-size: 10px; }
+.cungCard { background: rgba(255,255,255,.025); border: 1px solid rgba(255,255,255,.07); border-radius: 9px; padding: 10px; min-height: 120px; position: relative; transition: all .2s; }
+.cungHead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.cungChiTag { font-size: 10px; font-weight: 700; color: #e8c97a; background: rgba(232,201,122,.1); border-radius: 4px; padding: 1px 6px; }
+.cungFlags { font-size: 9px; color: #c9a84c; margin-bottom: 3px; font-weight: 600; }
+.cungDaiVan { font-size: 9px; color: rgba(255,255,255,.35); margin-bottom: 5px; }
+.cungChinhWrap { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed rgba(255,255,255,.08); }
+.cungVoChinh { font-size: 9px; color: rgba(255,255,255,.25); font-style: italic; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed rgba(255,255,255,.08); }
 .cungCard:hover { background: rgba(255,255,255,.045); border-color: rgba(201,168,76,.2); }
 .cungMenh { background: rgba(201,168,76,.09) !important; border-color: rgba(201,168,76,.35) !important; box-shadow: 0 0 12px rgba(201,168,76,.1); }
 .cungName { font-size: 8.5px; font-weight: 700; color: #c9a84c; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 3px; }
@@ -68,6 +81,17 @@
 .cungSaoItem { font-size: 9px; color: rgba(255,255,255,.5); background: rgba(255,255,255,.04); border-radius: 3px; padding: 1px 4px; line-height: 1.4; }
 .cungSaoItemMieu { color: #e8a060; background: rgba(232,160,96,.08); }
 .cungSaoItemHam { color: rgba(255,255,255,.3); font-style: italic; }
+
+/* Phân loại sao theo màu */
+.saoChinh { color: #f0d080 !important; background: rgba(240,208,128,.14) !important; font-weight: 700 !important; border: 1px solid rgba(240,208,128,.3); }
+.saoHoa   { color: #e89858 !important; background: rgba(232,152,88,.16) !important; font-weight: 700 !important; border: 1px solid rgba(232,152,88,.35); }
+.saoSat   { color: #e07070 !important; background: rgba(224,112,112,.12) !important; border: 1px solid rgba(224,112,112,.28); }
+.saoTot   { color: #6ab0e0 !important; background: rgba(106,176,224,.1) !important; }
+.saoXau   { color: #b090c0 !important; background: rgba(176,144,192,.1) !important; }
+.saoPhu   { color: rgba(255,255,255,.45) !important; background: rgba(255,255,255,.04) !important; }
+/* Đắc/hãm địa chồng lên màu loại */
+.saoMieu  { box-shadow: inset 0 -2px 0 rgba(240,208,128,.5); }
+.saoHam   { opacity: .55; font-style: italic; }
 
 /* ── Loading ── */
 .loadingWrap { text-align: center; padding: 48px 16px; }
