@@ -315,4 +315,27 @@ export function gioToIndex(hour) {
   return Math.floor((hour + 1) / 2) % 12
 }
 
+// Phân loại sao để hiển thị màu sắc
+export const CHINH_TINH = ['Tử Vi','Thiên Cơ','Thái Dương','Vũ Khúc','Thiên Đồng','Liêm Trinh',
+  'Thiên Phủ','Thái Âm','Tham Lang','Cự Môn','Thiên Tướng','Thiên Lương','Thất Sát','Phá Quân']
+export const SAT_TINH = ['Kình Dương','Đà La','Địa Không','Địa Kiếp','Hỏa Tinh','Linh Tinh']
+export const TU_HOA = ['Hóa Lộc','Hóa Quyền','Hóa Khoa','Hóa Kỵ']
+export const PHU_TINH_TOT = ['Tả Phụ','Hữu Bật','Văn Xương','Văn Khúc','Thiên Khôi','Thiên Việt',
+  'Lộc Tồn','Thiên Mã','Long Trì','Phượng Các','Tam Thai','Bát Tọa','Ân Quang','Thiên Quý',
+  'Thiên Đức','Nguyệt Đức','Quốc Ấn','Đường Phù','Thai Phụ','Phong Cáo','Thiên Phúc','Thiên Quan']
+export const PHU_TINH_XAU = ['Thiên Hình','Thiên Riêu','Thiên Khốc','Thiên Hư','Cô Thần','Quả Tú',
+  'Kiếp Sát','Phá Toái','Hoa Cái','Lưu Hà','Đào Hoa','Hồng Loan','Thiên Hỷ','Thiên Không',
+  'Tang Môn','Bạch Hổ','Tuế Phá','Điếu Khách','Đại Hao','Tiểu Hao']
+
+export function loaiSao(ten) {
+  // Bỏ hậu tố (M)(Đ)(H)(V) nếu có
+  const t = ten.replace(/\s*\([MĐHV]\)\s*$/, '').trim()
+  if (CHINH_TINH.includes(t)) return 'chinh'
+  if (TU_HOA.includes(t)) return 'hoa'
+  if (SAT_TINH.includes(t)) return 'sat'
+  if (PHU_TINH_TOT.includes(t)) return 'tot'
+  if (PHU_TINH_XAU.includes(t)) return 'xau'
+  return 'phu'  // sao phụ/vòng trường sinh/bác sỹ... màu trung tính
+}
+
 export { GIO_INFO, CHI_NAMES }
