@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { callClaude, parseJSON } from './api'
-import { GIO_SINH, CUNGS, STEPS, STEP_LABELS, SECTIONS, EXTRACT_PROMPT, PROMPT_PHAN1, PROMPT_PHAN2, PROMPT_PHAN3, PROMPT_PHAN4, PROMPT_PHAN5 } from './constants'
+import { STEPS, STEP_LABELS, SECTIONS, PROMPT_PHAN1, PROMPT_PHAN2, PROMPT_PHAN3, PROMPT_PHAN4, PROMPT_PHAN5 } from './constants'
+import { lapLaSoAm, GIO_INFO, CHI_NAMES } from './laso-engine'
 import styles from './App.module.css'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -28,7 +29,7 @@ function StepBar({ step }) {
             <div className={`${styles.step} ${cls}`}>
               <div className={styles.stepDot} />{STEP_LABELS[i]}
             </div>
-            {i < 4 && <div className={styles.stepSep} />}
+            {i < STEPS.length - 1 && <div className={styles.stepSep} />}
           </div>
         )
       })}
@@ -39,36 +40,47 @@ function StepBar({ step }) {
 // ── InfoForm ───────────────────────────────────────────────────────────────
 function InfoForm({ onNext }) {
   const [hoTen, setHoTen]       = useState('')
-  const [ngaySinh, setNgaySinh] = useState('')
+  const [ngayAL, setNgayAL]     = useState('')
+  const [thangAL, setThangAL]   = useState('')
+  const [namAL, setNamAL]       = useState('')
   const [gioSinh, setGioSinh]   = useState('')
   const [gioiTinh, setGioiTinh] = useState('Nam')
   const [email, setEmail]       = useState('')
 
   const submit = () => {
-    if (!hoTen.trim() || !ngaySinh || !gioSinh) {
-      alert('Vui lòng điền đầy đủ họ tên, ngày sinh và giờ sinh'); return
+    const d = parseInt(ngayAL), m = parseInt(thangAL), y = parseInt(namAL)
+    if (!hoTen.trim() || !d || !m || !y || gioSinh === '') {
+      alert('Vui lòng điền đầy đủ họ tên, ngày tháng năm sinh âm lịch và giờ sinh'); return
     }
-    onNext({ hoTen: hoTen.trim(), ngaySinh, gioSinh, gioiTinh, email })
+    if (d<1||d>30||m<1||m>12||y<1900||y>2100) { alert('Ngày tháng năm âm lịch không hợp lệ'); return }
+    onNext({ hoTen: hoTen.trim(), ngayAL:d, thangAL:m, namAL:y, gioIndex:parseInt(gioSinh), gioiTinh, email })
   }
 
   return (
     <div className={styles.card}>
       <div className={styles.cardTitle}>✦ Thông tin cơ bản</div>
-      <div className={styles.cardSub}>Nhập thông tin khách hàng. Sau đó upload ảnh/file lá số tử vi để nhận phân tích.</div>
+      <div className={styles.cardSub}>Nhập thông tin khách hàng theo lịch âm. Hệ thống sẽ tự động lập lá số chính xác.</div>
       <div className={styles.formGrid}>
         <div className={`${styles.fg} ${styles.full}`}>
           <label className={styles.label}>Họ và tên *</label>
           <input className={styles.input} value={hoTen} onChange={e => setHoTen(e.target.value)} placeholder="Nguyễn Văn A" />
         </div>
-        <div className={styles.fg}>
-          <label className={styles.label}>Ngày sinh dương lịch *</label>
-          <input className={styles.input} type="date" value={ngaySinh} onChange={e => setNgaySinh(e.target.value)} />
+        <div className={`${styles.fg} ${styles.full}`}>
+          <label className={styles.label}>Ngày sinh âm lịch *</label>
+          <div style={{display:'flex',gap:10}}>
+            <input className={styles.input} type="number" min="1" max="30" value={ngayAL}
+              onChange={e=>setNgayAL(e.target.value)} placeholder="Ngày" style={{flex:1}} />
+            <input className={styles.input} type="number" min="1" max="12" value={thangAL}
+              onChange={e=>setThangAL(e.target.value)} placeholder="Tháng" style={{flex:1}} />
+            <input className={styles.input} type="number" min="1900" max="2100" value={namAL}
+              onChange={e=>setNamAL(e.target.value)} placeholder="Năm" style={{flex:1.4}} />
+          </div>
         </div>
         <div className={styles.fg}>
           <label className={styles.label}>Giờ sinh *</label>
           <select className={styles.select} value={gioSinh} onChange={e => setGioSinh(e.target.value)}>
             <option value="">— Chọn giờ sinh —</option>
-            {GIO_SINH.map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+            {GIO_INFO.map(([ten,khung],i) => <option key={i} value={i}>{khung} ({ten})</option>)}
           </select>
         </div>
         <div className={styles.fg}>
@@ -77,79 +89,13 @@ function InfoForm({ onNext }) {
             <option>Nam</option><option>Nữ</option>
           </select>
         </div>
-        <div className={styles.fg}>
+        <div className={`${styles.fg} ${styles.full}`}>
           <label className={styles.label}>Email (tuỳ chọn)</label>
           <input className={styles.input} value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" />
         </div>
       </div>
       <div className={styles.btnRow}>
-        <button className={styles.btnP} disabled={!hoTen||!ngaySinh||!gioSinh} onClick={submit}>Tiếp theo →</button>
-      </div>
-    </div>
-  )
-}
-
-// ── UploadScreen ───────────────────────────────────────────────────────────
-function UploadScreen({ onBack, onDone, info }) {
-  const [file, setFile]       = useState(null)
-  const [b64, setB64]         = useState(null)
-  const [mime, setMime]       = useState(null)
-  const [drag, setDrag]       = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
-  const fileRef = useRef()
-
-  const handleFile = useCallback((f) => {
-    if (!f) return
-    if (!['image/png','image/jpeg','image/webp','application/pdf'].includes(f.type)) { alert('Chỉ hỗ trợ PNG, JPG, WEBP, PDF'); return }
-    setFile(f)
-    const r = new FileReader()
-    r.onload = e => { setB64(e.target.result.split(',')[1]); setMime(f.type) }
-    r.readAsDataURL(f)
-  }, [])
-
-  const doExtract = async () => {
-    setLoading(true); setError('')
-    try {
-      const cType = mime === 'application/pdf' ? 'document' : 'image'
-      const text = await callClaude([{ role:'user', content:[
-        { type:cType, source:{ type:'base64', media_type:mime, data:b64 } },
-        { type:'text', text: EXTRACT_PROMPT(info) }
-      ]}])
-      onDone(parseJSON(text))
-    } catch { setError('Không đọc được lá số. Thử ảnh rõ hơn hoặc chụp lại toàn bộ trang lá số.') }
-    finally { setLoading(false) }
-  }
-
-  return (
-    <div className={styles.card}>
-      <div className={styles.cardTitle}>☁ Upload lá số Tử Vi</div>
-      <div className={styles.cardSub}>Upload ảnh chụp màn hình hoặc file PDF lá số tử vi vào đây. Hệ thống sẽ tự đọc và trích xuất toàn bộ thông tin 12 cung.</div>
-      <div className={`${styles.uploadZone}${drag?' '+styles.drag:''}`}
-        onClick={() => fileRef.current.click()}
-        onDragOver={e=>{e.preventDefault();setDrag(true)}}
-        onDragLeave={()=>setDrag(false)}
-        onDrop={e=>{e.preventDefault();setDrag(false);handleFile(e.dataTransfer.files[0])}}>
-        <div className={styles.uploadIcon}>{file?'✅':'📄'}</div>
-        <div className={styles.uploadText}>{file?file.name:'Kéo thả hoặc click để chọn file'}</div>
-        <div className={styles.uploadSub}>PNG · JPG · WEBP · PDF &nbsp;|&nbsp; Tối đa 10MB</div>
-        <input ref={fileRef} type="file" accept="image/*,.pdf" style={{display:'none'}} onChange={e=>handleFile(e.target.files[0])} />
-      </div>
-      {file && (
-        <div className={styles.filePreview}>
-          <span style={{fontSize:20}}>{mime?.includes('pdf')?'📕':'🖼️'}</span>
-          <div>
-            <div style={{fontSize:13,fontWeight:600}}>{file.name}</div>
-            <div style={{fontSize:11,color:'rgba(255,255,255,.3)'}}>{(file.size/1024).toFixed(0)} KB</div>
-          </div>
-        </div>
-      )}
-      {error && <div className={styles.errorBox}>⚠ {error}</div>}
-      <div className={styles.btnRow}>
-        <button className={styles.btnS} onClick={onBack}>← Quay lại</button>
-        <button className={styles.btnP} disabled={!b64||loading} onClick={doExtract}>
-          {loading?'⏳ Đang đọc lá số...':'Đọc lá số →'}
-        </button>
+        <button className={styles.btnP} onClick={submit}>Lập lá số →</button>
       </div>
     </div>
   )
@@ -159,31 +105,37 @@ function UploadScreen({ onBack, onDone, info }) {
 function VerifyScreen({ laSo, onBack, onAnalyze, error }) {
   const cc = laSo?.cacCung || {}
   const rows = [
-    ['Âm lịch', `${laSo?.amLich?.ngay||'?'}/${laSo?.amLich?.thang||'?'}/${laSo?.amLich?.nam||'?'}`],
-    ['Can Chi năm', laSo?.canChi?.nam||'—'], ['Giờ Can Chi', laSo?.canChi?.gio||'—'],
-    ['Cục', laSo?.cuc||'—'], ['Bản mệnh', laSo?.banMenh||'—'], ['Âm dương', laSo?.amDuong||'—'],
-    ['Mệnh chủ', laSo?.menhChu||'—'], ['Thân chủ', laSo?.thanChu||'—'],
-    ['Mệnh cung', `${laSo?.menhCung?.cung||'—'} – ${laSo?.menhCung?.chi||''}`],
-    ['Thân cung', `${laSo?.thanCung?.cung||'—'} – ${laSo?.thanCung?.chi||''}`],
-    ['Tuổi / Năm', `${laSo?.tuoi||'?'}t / ${laSo?.namXem||'?'}`],
+    ['Âm lịch', `${laSo?.amLich?.ngay}/${laSo?.amLich?.thang}/${laSo?.amLich?.nam}`],
+    ['Can Chi năm', laSo?.canChiNam||'—'],
+    ['Âm dương', laSo?.amDuong||'—'],
+    ['Bản mệnh', laSo?.banMenh||'—'],
+    ['Cục', laSo?.cuc||'—'],
+    ['Giới tính', laSo?.gioiTinh||'—'],
+    ['Mệnh tại', laSo?.menhCung||'—'],
+    ['Thân cư', `${laSo?.thanCu||'—'} (${laSo?.thanCung||''})`],
   ]
   return (
     <div className={styles.card}>
-      <div className={styles.cardTitle}>✓ Xác nhận thông tin lá số</div>
-      <div className={styles.cardSub}>Claude đã đọc xong. Kiểm tra lại trước khi phân tích 100 mục.</div>
+      <div className={styles.cardTitle}>✓ Xác nhận lá số</div>
+      <div className={styles.cardSub}>Lá số được lập tự động theo thuật toán Tử Vi. Kiểm tra trước khi phân tích 100 mục.</div>
       <div className={styles.infoGrid}>
         {rows.map(([k,v]) => <div key={k} className={styles.infoItem}><div className={styles.infoKey}>{k}</div><div className={styles.infoVal}>{v}</div></div>)}
       </div>
       <div className={styles.sectionLabel}>12 Cung Mệnh</div>
       <div className={styles.cungGrid}>
-        {CUNGS.map(n => {
-          const c = cc[n]||{}; const isMenh = n==='Mệnh'
+        {CHI_NAMES.map(chi => {
+          const c = cc[chi]||{}
+          const isMenh = c.cung==='Mệnh'
+          let flags = []
+          if (c.than) flags.push('Thân')
+          if (c.tuan) flags.push('Tuần')
+          if (c.triet) flags.push('Triệt')
           return (
-            <div key={n} className={`${styles.cungCard}${isMenh?' '+styles.cungMenh:''}`}>
-              <div className={styles.cungName}>{isMenh?'⭐ ':''}{n}</div>
-              <div className={styles.cungChi}>{c.chi||'—'}{c.hanh?' – '+c.hanh:''}</div>
+            <div key={chi} className={`${styles.cungCard}${isMenh?' '+styles.cungMenh:''}`}>
+              <div className={styles.cungName}>{isMenh?'⭐ ':''}{c.cung||'—'}</div>
+              <div className={styles.cungChi}>{chi}{flags.length?' · '+flags.join('·'):''}</div>
               <div className={styles.cungSaoWrap}>
-                {(c.sao||[]).slice(0,8).map((s,i) => <span key={i} className={saoItemCls(s)}>{s}</span>)}
+                {(c.sao||[]).map((s,i) => <span key={i} className={saoItemCls(s)}>{s}</span>)}
               </div>
             </div>
           )
@@ -191,7 +143,7 @@ function VerifyScreen({ laSo, onBack, onAnalyze, error }) {
       </div>
       {error && <div className={styles.errorBox}>⚠ {error}</div>}
       <div className={styles.btnRow}>
-        <button className={styles.btnS} onClick={onBack}>← Upload lại</button>
+        <button className={styles.btnS} onClick={onBack}>← Sửa thông tin</button>
         <button className={`${styles.btnP} ${styles.btnLarge}`} onClick={onAnalyze}>✦ Phân tích 100 mục</button>
       </div>
     </div>
@@ -239,22 +191,28 @@ function AnalyzingScreen({ name, progress }) {
 
 // ── NgũHành Chart ──────────────────────────────────────────────────────────
 function NguHanhChart({ laSo }) {
-  // Tính điểm ngũ hành từ các sao trong 12 cung
-  const scores = { Kim: 0, Mộc: 0, Thủy: 0, Hỏa: 0, Thổ: 0 }
-  const hanhMap = { 'Kim': 'Kim', 'Mộc': 'Mộc', 'Thủy': 'Thủy', 'Hỏa': 'Hỏa', 'Thổ': 'Thổ' }
-  Object.values(laSo?.cacCung||{}).forEach(c => {
-    if (hanhMap[c.hanh]) scores[hanhMap[c.hanh]] += 20
-  })
-  // Normalize về 100
+  // Điểm ngũ hành: dựa trên Bản mệnh (trọng số cao) + Cục + hành của địa chi các cung quan trọng
+  const scores = { Kim: 30, Mộc: 30, Thủy: 30, Hỏa: 30, Thổ: 30 }
+  // Bản mệnh +40
+  if (scores[laSo?.banMenh] !== undefined) scores[laSo.banMenh] += 40
+  // Cục +25
+  const cucHanh = (laSo?.cuc||'').includes('Thủy') ? 'Thủy' : (laSo?.cuc||'').includes('Mộc') ? 'Mộc'
+    : (laSo?.cuc||'').includes('Kim') ? 'Kim' : (laSo?.cuc||'').includes('Hỏa') ? 'Hỏa' : 'Thổ'
+  scores[cucHanh] += 25
+  // Hành của địa chi cung Mệnh +20
+  const chiHanh = { 'Tý':'Thủy','Hợi':'Thủy','Dần':'Mộc','Mão':'Mộc','Tỵ':'Hỏa','Ngọ':'Hỏa',
+    'Thân':'Kim','Dậu':'Kim','Thìn':'Thổ','Tuất':'Thổ','Sửu':'Thổ','Mùi':'Thổ' }
+  if (chiHanh[laSo?.menhCung]) scores[chiHanh[laSo.menhCung]] += 20
+
   const max = Math.max(...Object.values(scores), 1)
   const norm = Object.fromEntries(Object.entries(scores).map(([k,v]) => [k, Math.round(v/max*100)]))
 
   const items = [
-    { label:'Kim', score: norm.Kim||45, color:'#a8a8b8' },
-    { label:'Mộc', score: norm.Mộc||75, color:'#5a9a5a' },
-    { label:'Thủy', score: norm.Thủy||60, color:'#5878b8' },
-    { label:'Hỏa', score: norm.Hỏa||70, color:'#b85858' },
-    { label:'Thổ', score: norm.Thổ||50, color:'#9a7840' },
+    { label:'Kim', score: norm.Kim, color:'#a8a8b8' },
+    { label:'Mộc', score: norm.Mộc, color:'#5a9a5a' },
+    { label:'Thủy', score: norm.Thủy, color:'#5878b8' },
+    { label:'Hỏa', score: norm.Hỏa, color:'#b85858' },
+    { label:'Thổ', score: norm.Thổ, color:'#9a7840' },
   ]
 
   // SVG radar
@@ -295,42 +253,47 @@ function NguHanhChart({ laSo }) {
 }
 
 // ── Đại Vận Timeline ───────────────────────────────────────────────────────
-function DaiVanTimeline({ result }) {
-  const vanData = [
-    { age:'3–12',   canChi:'Mậu Tý',   theme:'Học vấn nền tảng',   level:60,  color:'#5a7a5a', current:false },
-    { age:'13–22',  canChi:'Kỷ Sửu',   theme:'Trưởng thành định hướng', level:65, color:'#5a7a6a', current:false },
-    { age:'23–32',  canChi:'Canh Dần',  theme:'Lập nghiệp – Hiện tại', level:75, color:'#8a6a20', current:true  },
-    { age:'33–42',  canChi:'Tân Mão',   theme:'Tăng tốc bản lề',    level:85,  color:'#7a5a10', current:false },
-    { age:'43–52',  canChi:'Nhâm Thìn', theme:'Đỉnh cao sự nghiệp', level:95,  color:'#2a6a4a', current:false },
-    { age:'53–62',  canChi:'Quý Tỵ',   theme:'Củng cố ổn định',    level:78,  color:'#4a6a7a', current:false },
-    { age:'63–72',  canChi:'Giáp Ngọ',  theme:'Hậu vận an lạc',    level:65,  color:'#5a4a7a', current:false },
-  ]
+function DaiVanTimeline({ laSo, info }) {
+  const order = ['Tý','Sửu','Dần','Mão','Thìn','Tỵ','Ngọ','Mùi','Thân','Dậu','Tuất','Hợi']
+  // Tính tuổi hiện tại để đánh dấu đại vận đang ở
+  const namXem = parseInt(info?.namXem) || new Date().getFullYear()
+  const tuoi = namXem - laSo.amLich.nam + 1
 
-  const levelLabel = (l) => l>=90?'Xuất sắc':l>=80?'Rất tốt':l>=70?'Tốt':l>=60?'Khá':'Bình thuận'
+  // Gom các cung có đại vận, sắp theo mốc tuổi bắt đầu
+  const vans = order.map(chi => {
+    const c = laSo.cacCung[chi]
+    if (!c?.daiVan) return null
+    const chinhTinh = c.sao.filter(s => ['Tử Vi','Thiên Cơ','Thái Dương','Vũ Khúc','Thiên Đồng','Liêm Trinh','Thiên Phủ','Thái Âm','Tham Lang','Cự Môn','Thiên Tướng','Thiên Lương','Thất Sát','Phá Quân'].includes(s))
+    return {
+      chi, cung: c.cung,
+      tu: c.daiVan[0], den: c.daiVan[1],
+      sao: chinhTinh.length ? chinhTinh.join(', ') : 'Vô chính diệu',
+      current: tuoi >= c.daiVan[0] && tuoi <= c.daiVan[1],
+    }
+  }).filter(Boolean).sort((a,b) => a.tu - b.tu)
+
+  const colors = ['#5a7a5a','#5a7a6a','#8a6a20','#7a5a10','#2a6a4a','#4a6a7a','#5a4a7a','#7a4a5a','#4a5a7a','#6a5a3a','#3a6a6a','#5a6a4a']
 
   return (
     <div className={styles.vanTimeline}>
-      {vanData.map((v,i) => (
+      {vans.map((v,i) => (
         <div key={i} className={styles.vanItem}>
           <div className={styles.vanLeft}>
-            <div className={styles.vanAge}>{v.age}</div>
-            <div className={styles.vanCanChi}>{v.canChi}</div>
+            <div className={styles.vanAge}>{v.tu}–{v.den}</div>
+            <div className={styles.vanCanChi}>{v.cung} ({v.chi})</div>
           </div>
           <div className={styles.vanCenter}>
             <div className={`${styles.vanDot}${v.current?' '+styles.vanDotCurrent:''}`}
-              style={{borderColor:v.color, color:v.color, background:v.current?v.color:'transparent'}}/>
-            {i<vanData.length-1 && <div className={styles.vanLine} style={{background:`linear-gradient(${v.color},${vanData[i+1].color})`}}/>}
+              style={{borderColor:colors[i], color:colors[i], background:v.current?colors[i]:'transparent'}}/>
+            {i<vans.length-1 && <div className={styles.vanLine} style={{background:`linear-gradient(${colors[i]},${colors[i+1]})`}}/>}
           </div>
           <div className={styles.vanRight}>
-            <div className={styles.vanCard} style={{borderColor:v.color+'44', background:v.color+'11'}}>
+            <div className={styles.vanCard} style={{borderColor:colors[i]+'44', background:colors[i]+'11'}}>
               <div className={styles.vanCardTitle} style={{color:v.current?'#e8c97a':'rgba(255,255,255,.75)'}}>
-                {v.current?'★ ':''}{v.theme}
+                {v.current?'★ Đại vận hiện tại — ':''}Cung {v.cung}
               </div>
               <div className={styles.vanCardTheme} style={{color:'rgba(255,255,255,.45)'}}>
-                {v.canChi}
-              </div>
-              <div className={styles.vanCardBadge} style={{background:v.color+'22', color:v.color, border:`1px solid ${v.color}44`}}>
-                {levelLabel(v.level)} · {v.level}/100
+                {v.sao}
               </div>
             </div>
           </div>
@@ -365,8 +328,8 @@ function ResultScreen({ result, info, laSo, onNew }) {
       <div className={styles.resultHeader}>
         <div className={styles.resultName}>✦ {info.hoTen}</div>
         <div className={styles.resultMeta}>
-          {info.ngaySinh} · Giờ {info.gioSinh} · {info.gioiTinh} · {ls.cuc||''} · {ls.banMenh||''}
-          {ls.menhChu ? ` · Mệnh chủ: ${ls.menhChu}` : ''}
+          {laSo.amLich.ngay}/{laSo.amLich.thang}/{laSo.amLich.nam} ÂL · Giờ {GIO_INFO[info.gioIndex]?.[0]||''} · {info.gioiTinh} · {ls.cuc||''} · {ls.banMenh||''}
+          {ls.menhCung ? ` · Mệnh tại ${ls.menhCung}` : ''}
         </div>
         {tq.tomluat && <div className={styles.resultQuote}>"{tq.tomluat}"</div>}
         {/* Chỉ số */}
@@ -409,17 +372,21 @@ function ResultScreen({ result, info, laSo, onNew }) {
           <div className={styles.card}>
             <div className={styles.cardTitle}>◈ Đại Vận Trọn Đời</div>
             <div style={{marginBottom:8,fontSize:12,color:'rgba(255,255,255,.35)'}}>★ = Giai đoạn hiện tại</div>
-            <DaiVanTimeline result={result} />
+            <DaiVanTimeline laSo={ls} info={info} />
           </div>
           <div className={styles.card}>
             <div className={styles.cardTitle}>◉ Bản đồ 12 Cung Mệnh</div>
             <div className={styles.cungGrid}>
-              {CUNGS.map(n => {
-                const c = ls.cacCung?.[n]||{}; const isMenh = n==='Mệnh'
+              {CHI_NAMES.map(chi => {
+                const c = ls.cacCung?.[chi]||{}; const isMenh = c.cung==='Mệnh'
+                let flags = []
+                if (c.than) flags.push('Thân')
+                if (c.tuan) flags.push('Tuần')
+                if (c.triet) flags.push('Triệt')
                 return (
-                  <div key={n} className={`${styles.cungCard}${isMenh?' '+styles.cungMenh:''}`}>
-                    <div className={styles.cungName}>{isMenh?'⭐ ':''}{n}</div>
-                    <div className={styles.cungChi}>{c.chi||'—'}{c.hanh?` – ${c.hanh}`:''}</div>
+                  <div key={chi} className={`${styles.cungCard}${isMenh?' '+styles.cungMenh:''}`}>
+                    <div className={styles.cungName}>{isMenh?'⭐ ':''}{c.cung||'—'}</div>
+                    <div className={styles.cungChi}>{chi}{flags.length?' · '+flags.join('·'):''}</div>
                     <div className={styles.cungSaoWrap}>
                       {(c.sao||[]).map((s,i) => <span key={i} className={saoItemCls(s)}>{s}</span>)}
                     </div>
@@ -482,8 +449,13 @@ export default function App() {
   const [analyzeErr, setAnalyzeErr] = useState('')
   const [progress, setProgress]     = useState({})
 
-  const handleInfoNext   = useCallback((d) => { setInfo(d); setStep('upload') }, [])
-  const handleExtracted  = useCallback((d) => { setLaSo(d); setStep('verify') }, [])
+  const handleInfoNext = useCallback((d) => {
+    const withYear = { ...d, namXem: new Date().getFullYear() }
+    setInfo(withYear)
+    const ls = lapLaSoAm(d.ngayAL, d.thangAL, d.namAL, d.gioIndex, d.gioiTinh)
+    setLaSo(ls)
+    setStep('verify')
+  }, [])
 
   const handleAnalyze = useCallback(async () => {
     setStep('analyzing'); setAnalyzeErr('')
@@ -544,8 +516,7 @@ export default function App() {
       <div className={styles.main}>
         <StepBar step={step} />
         {step==='info'      && <InfoForm onNext={handleInfoNext} />}
-        {step==='upload'    && <UploadScreen onBack={()=>setStep('info')} onDone={handleExtracted} info={info} />}
-        {step==='verify'    && laSo && <VerifyScreen laSo={laSo} onBack={()=>setStep('upload')} onAnalyze={handleAnalyze} error={analyzeErr} />}
+        {step==='verify'    && laSo && <VerifyScreen laSo={laSo} onBack={()=>setStep('info')} onAnalyze={handleAnalyze} error={analyzeErr} />}
         {step==='analyzing' && <AnalyzingScreen name={info?.hoTen||''} progress={progress} />}
         {step==='result'    && result && <ResultScreen result={result} info={info} laSo={laSo} onNew={handleNew} />}
       </div>
