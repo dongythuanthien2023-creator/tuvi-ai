@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+     - run: npm install
       - name: Build app Windows (.exe)
         run: npm run electron:build
       - name: Đăng file cài đặt lên Releases
