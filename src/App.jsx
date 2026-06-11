@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { callClaude, parseJSON } from './api'
 import { STEPS, STEP_LABELS, SECTIONS, PROMPT_PHAN1, PROMPT_PHAN2, PROMPT_PHAN3, PROMPT_PHAN4, PROMPT_PHAN5 } from './constants'
-import { lapLaSoAm, GIO_INFO, CHI_NAMES } from './laso-engine'
+import { lapLaSoAm, GIO_INFO, CHI_NAMES, loaiSao } from './laso-engine'
 import styles from './App.module.css'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -12,9 +12,20 @@ function tagCls(t) {
 }
 
 function saoItemCls(sao) {
-  if (/\(M\)/.test(sao) || /miếu/i.test(sao)) return `${styles.cungSaoItem} ${styles.cungSaoItemMieu}`
-  if (/\(H\)/.test(sao) || /hãm/i.test(sao)) return `${styles.cungSaoItem} ${styles.cungSaoItemHam}`
-  return styles.cungSaoItem
+  const loai = loaiSao(sao)
+  const map = {
+    chinh: styles.saoChinh,
+    hoa:   styles.saoHoa,
+    sat:   styles.saoSat,
+    tot:   styles.saoTot,
+    xau:   styles.saoXau,
+    phu:   styles.saoPhu,
+  }
+  let cls = `${styles.cungSaoItem} ${map[loai]||styles.saoPhu}`
+  // Đắc/hãm địa: hậu tố (M)(Đ)(V)(H)
+  if (/\(M\)/.test(sao)) cls += ` ${styles.saoMieu}`
+  else if (/\(H\)/.test(sao)) cls += ` ${styles.saoHam}`
+  return cls
 }
 
 // ── StepBar ────────────────────────────────────────────────────────────────
@@ -101,6 +112,60 @@ function InfoForm({ onNext }) {
   )
 }
 
+// ── Render 1 ô cung (chính tinh nổi bật trên, phụ tinh dưới) ────────────────
+function CungCard({ chi, c }) {
+  const isMenh = c.cung === 'Mệnh'
+  const sao = c.sao || []
+  const chinh = sao.filter(s => loaiSao(s) === 'chinh')
+  const phu = sao.filter(s => loaiSao(s) !== 'chinh')
+  let flags = []
+  if (c.than) flags.push('Thân')
+  if (c.tuan) flags.push('Tuần')
+  if (c.triet) flags.push('Triệt')
+  return (
+    <div className={`${styles.cungCard}${isMenh?' '+styles.cungMenh:''}`}>
+      <div className={styles.cungHead}>
+        <span className={styles.cungName}>{isMenh?'⭐ ':''}{c.cung||'—'}</span>
+        <span className={styles.cungChiTag}>{chi}</span>
+      </div>
+      {flags.length>0 && <div className={styles.cungFlags}>{flags.join(' · ')}</div>}
+      {c.daiVan && <div className={styles.cungDaiVan}>Đại vận {c.daiVan[0]}–{c.daiVan[1]}t</div>}
+      {chinh.length>0 && (
+        <div className={styles.cungChinhWrap}>
+          {chinh.map((s,i) => <span key={i} className={saoItemCls(s)}>{s}</span>)}
+        </div>
+      )}
+      {chinh.length===0 && <div className={styles.cungVoChinh}>Vô chính diệu</div>}
+      <div className={styles.cungSaoWrap}>
+        {phu.map((s,i) => <span key={i} className={saoItemCls(s)}>{s}</span>)}
+      </div>
+    </div>
+  )
+}
+
+// ── Legend chú thích loại sao ──────────────────────────────────────────────
+function SaoLegend() {
+  const items = [
+    ['saoChinh', 'Chính tinh'],
+    ['saoHoa', 'Tứ Hóa'],
+    ['saoTot', 'Phụ tinh cát'],
+    ['saoXau', 'Phụ tinh hung'],
+    ['saoSat', 'Sát tinh'],
+    ['saoPhu', 'Sao phụ khác'],
+  ]
+  return (
+    <div className={styles.legend}>
+      {items.map(([cls,label]) => (
+        <span key={cls} className={styles.legendItem}>
+          <span className={`${styles.legendDot} ${styles[cls]}`} />{label}
+        </span>
+      ))}
+      <span className={styles.legendItem}><span className={styles.legendUnderline} />Miếu/Vượng (M)</span>
+      <span className={styles.legendItem}><em className={styles.legendHam}>nghiêng</em> = Hãm (H)</span>
+    </div>
+  )
+}
+
 // ── VerifyScreen ───────────────────────────────────────────────────────────
 function VerifyScreen({ laSo, onBack, onAnalyze, error }) {
   const cc = laSo?.cacCung || {}
@@ -122,24 +187,9 @@ function VerifyScreen({ laSo, onBack, onAnalyze, error }) {
         {rows.map(([k,v]) => <div key={k} className={styles.infoItem}><div className={styles.infoKey}>{k}</div><div className={styles.infoVal}>{v}</div></div>)}
       </div>
       <div className={styles.sectionLabel}>12 Cung Mệnh</div>
+      <SaoLegend />
       <div className={styles.cungGrid}>
-        {CHI_NAMES.map(chi => {
-          const c = cc[chi]||{}
-          const isMenh = c.cung==='Mệnh'
-          let flags = []
-          if (c.than) flags.push('Thân')
-          if (c.tuan) flags.push('Tuần')
-          if (c.triet) flags.push('Triệt')
-          return (
-            <div key={chi} className={`${styles.cungCard}${isMenh?' '+styles.cungMenh:''}`}>
-              <div className={styles.cungName}>{isMenh?'⭐ ':''}{c.cung||'—'}</div>
-              <div className={styles.cungChi}>{chi}{flags.length?' · '+flags.join('·'):''}</div>
-              <div className={styles.cungSaoWrap}>
-                {(c.sao||[]).map((s,i) => <span key={i} className={saoItemCls(s)}>{s}</span>)}
-              </div>
-            </div>
-          )
-        })}
+        {CHI_NAMES.map(chi => <CungCard key={chi} chi={chi} c={cc[chi]||{}} />)}
       </div>
       {error && <div className={styles.errorBox}>⚠ {error}</div>}
       <div className={styles.btnRow}>
@@ -376,23 +426,9 @@ function ResultScreen({ result, info, laSo, onNew }) {
           </div>
           <div className={styles.card}>
             <div className={styles.cardTitle}>◉ Bản đồ 12 Cung Mệnh</div>
+            <SaoLegend />
             <div className={styles.cungGrid}>
-              {CHI_NAMES.map(chi => {
-                const c = ls.cacCung?.[chi]||{}; const isMenh = c.cung==='Mệnh'
-                let flags = []
-                if (c.than) flags.push('Thân')
-                if (c.tuan) flags.push('Tuần')
-                if (c.triet) flags.push('Triệt')
-                return (
-                  <div key={chi} className={`${styles.cungCard}${isMenh?' '+styles.cungMenh:''}`}>
-                    <div className={styles.cungName}>{isMenh?'⭐ ':''}{c.cung||'—'}</div>
-                    <div className={styles.cungChi}>{chi}{flags.length?' · '+flags.join('·'):''}</div>
-                    <div className={styles.cungSaoWrap}>
-                      {(c.sao||[]).map((s,i) => <span key={i} className={saoItemCls(s)}>{s}</span>)}
-                    </div>
-                  </div>
-                )
-              })}
+              {CHI_NAMES.map(chi => <CungCard key={chi} chi={chi} c={ls.cacCung?.[chi]||{}} />)}
             </div>
           </div>
         </div>
