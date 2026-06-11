@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { callClaude, parseJSON } from './api'
-import { GIO_SINH, CUNGS, STEPS, STEP_LABELS, SECTIONS, EXTRACT_PROMPT, ANALYZE_PROMPT } from './constants'
+import { GIO_SINH, CUNGS, STEPS, STEP_LABELS, SECTIONS, EXTRACT_PROMPT, PROMPT_PHAN1, PROMPT_PHAN2, PROMPT_PHAN3, PROMPT_PHAN4, PROMPT_PHAN5 } from './constants'
 import styles from './App.module.css'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -199,18 +199,38 @@ function VerifyScreen({ laSo, onBack, onAnalyze, error }) {
 }
 
 // ── AnalyzingScreen ────────────────────────────────────────────────────────
-function AnalyzingScreen({ name }) {
+function AnalyzingScreen({ name, progress }) {
+  const parts = [
+    { k: 'phan1', l: 'Cốt cách & Nội tâm', range: '1–20' },
+    { k: 'phan2', l: 'Sự nghiệp & Tài lộc', range: '21–50' },
+    { k: 'phan3', l: 'Tình duyên & Gia đạo', range: '51–70' },
+    { k: 'phan4', l: 'Sức khỏe & Vận hạn', range: '71–90' },
+    { k: 'phan5', l: 'Định hướng & Hành động', range: '91–100' },
+  ]
+  const doneCount = Object.values(progress || {}).filter(v => v === 'done').length
   return (
     <div className={styles.card}>
       <div className={styles.loadingWrap}>
         <div className={styles.spinner} />
         <div style={{fontSize:30,marginBottom:12}}>☯</div>
         <div className={styles.loadingText}>Đang luận giải lá số <strong style={{color:'#c9a84c'}}>{name}</strong></div>
-        <div className={styles.loadingSub}>Claude đang phân tích chi tiết 100 mục...<br/>Quá trình mất khoảng 40–90 giây</div>
-        <div className={styles.loadingTags}>
-          {['Cốt cách','Sự nghiệp','Tài lộc','Tình duyên','Sức khỏe','Vận hạn','Cải mệnh'].map(t => (
-            <span key={t} className={`${styles.tag} ${styles.tagG} ${styles.tagPulse}`}>{t}</span>
-          ))}
+        <div className={styles.loadingSub}>Đã hoàn thành {doneCount}/5 phần · Mỗi phần khoảng 15–25 giây</div>
+        <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:20,maxWidth:340,marginLeft:'auto',marginRight:'auto'}}>
+          {parts.map(p => {
+            const st = progress?.[p.k] || 'wait'
+            const color = st === 'done' ? '#58a8a8' : st === 'running' ? '#c9a84c' : 'rgba(255,255,255,.2)'
+            const icon = st === 'done' ? '✓' : st === 'running' ? '◌' : '○'
+            return (
+              <div key={p.k} style={{display:'flex',alignItems:'center',gap:10,fontSize:13}}>
+                <span style={{color,fontWeight:700,width:16,
+                  animation: st==='running' ? 'spin 1.5s linear infinite' : 'none'}}>{icon}</span>
+                <span style={{color: st==='wait'?'rgba(255,255,255,.4)':'rgba(255,255,255,.75)',flex:1,textAlign:'left'}}>
+                  {p.l}
+                </span>
+                <span style={{color:'rgba(255,255,255,.3)',fontSize:11}}>Mục {p.range}</span>
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>
@@ -460,20 +480,56 @@ export default function App() {
   const [laSo, setLaSo]             = useState(null)
   const [result, setResult]         = useState(null)
   const [analyzeErr, setAnalyzeErr] = useState('')
+  const [progress, setProgress]     = useState({})
 
   const handleInfoNext   = useCallback((d) => { setInfo(d); setStep('upload') }, [])
   const handleExtracted  = useCallback((d) => { setLaSo(d); setStep('verify') }, [])
 
   const handleAnalyze = useCallback(async () => {
     setStep('analyzing'); setAnalyzeErr('')
+    setProgress({ phan1:'running', phan2:'wait', phan3:'wait', phan4:'wait', phan5:'wait' })
+
+    const parts = [
+      { key: 'phan1', prompt: PROMPT_PHAN1 },
+      { key: 'phan2', prompt: PROMPT_PHAN2 },
+      { key: 'phan3', prompt: PROMPT_PHAN3 },
+      { key: 'phan4', prompt: PROMPT_PHAN4 },
+      { key: 'phan5', prompt: PROMPT_PHAN5 },
+    ]
+
+    const combined = {}
     try {
-      const text = await callClaude([{ role:'user', content: ANALYZE_PROMPT(info, laSo) }], 8000)
-      setResult(parseJSON(text)); setStep('result')
-    } catch { setAnalyzeErr('Phân tích thất bại. Vui lòng thử lại.'); setStep('verify') }
+      for (let i = 0; i < parts.length; i++) {
+        const { key, prompt } = parts[i]
+        setProgress(p => ({ ...p, [key]: 'running' }))
+
+        // Retry tối đa 2 lần nếu lỗi parse/timeout
+        let parsed = null
+        for (let attempt = 0; attempt < 2 && !parsed; attempt++) {
+          try {
+            const text = await callClaude([{ role: 'user', content: prompt(info, laSo) }], 8000)
+            parsed = parseJSON(text)
+          } catch (e) {
+            if (attempt === 1) throw e
+          }
+        }
+
+        combined[key] = { title: parsed.title, muc: parsed.muc || [] }
+        if (key === 'phan5' && parsed.tongQuan) combined.tongQuan = parsed.tongQuan
+
+        setProgress(p => ({ ...p, [key]: 'done', [parts[i+1]?.key]: 'running' }))
+      }
+
+      setResult(combined)
+      setStep('result')
+    } catch {
+      setAnalyzeErr('Phân tích thất bại ở một phần. Vui lòng thử lại.')
+      setStep('verify')
+    }
   }, [info, laSo])
 
   const handleNew = useCallback(() => {
-    setStep('info'); setInfo(null); setLaSo(null); setResult(null); setAnalyzeErr('')
+    setStep('info'); setInfo(null); setLaSo(null); setResult(null); setAnalyzeErr(''); setProgress({})
   }, [])
 
   return (
@@ -490,7 +546,7 @@ export default function App() {
         {step==='info'      && <InfoForm onNext={handleInfoNext} />}
         {step==='upload'    && <UploadScreen onBack={()=>setStep('info')} onDone={handleExtracted} info={info} />}
         {step==='verify'    && laSo && <VerifyScreen laSo={laSo} onBack={()=>setStep('upload')} onAnalyze={handleAnalyze} error={analyzeErr} />}
-        {step==='analyzing' && <AnalyzingScreen name={info?.hoTen||''} />}
+        {step==='analyzing' && <AnalyzingScreen name={info?.hoTen||''} progress={progress} />}
         {step==='result'    && result && <ResultScreen result={result} info={info} laSo={laSo} onNew={handleNew} />}
       </div>
     </div>
