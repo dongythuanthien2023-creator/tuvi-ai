@@ -156,11 +156,56 @@ ipcMain.handle('call-claude', async (_e, { messages, maxTokens }) => {
   const apiKey = settings.apiKey
   if (!apiKey) return { error: { message: 'Chưa cấu hình API key. Vào Cài đặt để nhập.' } }
 
+  // Schema ép JSON đúng cấu trúc
+  const mucSchema = {
+    type: 'object',
+    properties: {
+      so: { type: 'integer' },
+      ten: { type: 'string' },
+      diem: { type: 'integer' },
+      tags: { type: 'array', items: { type: 'string' } },
+      noidung: { type: 'string' },
+      loiKhuyen: { type: 'string' },
+      canhBao: { type: 'string' },
+    },
+    required: ['so', 'ten', 'diem', 'tags', 'noidung', 'loiKhuyen', 'canhBao'],
+    additionalProperties: false,
+  }
+  const tongQuanSchema = {
+    type: 'object',
+    properties: {
+      sucNghiep: { type: 'integer' }, taiLoc: { type: 'integer' },
+      tinhDuyen: { type: 'integer' }, giaDao: { type: 'integer' },
+      sucKhoe: { type: 'integer' },
+      giaiDoanVang: { type: 'string' }, diemManhNhat: { type: 'string' },
+      diemYeuNhat: { type: 'string' }, tomluat: { type: 'string' },
+      thongDiepNam: { type: 'string' },
+    },
+    required: ['sucNghiep','taiLoc','tinhDuyen','giaDao','sucKhoe','giaiDoanVang','diemManhNhat','diemYeuNhat','tomluat','thongDiepNam'],
+    additionalProperties: false,
+  }
+  const schema = {
+    type: 'object',
+    properties: {
+      title: { type: 'string' },
+      muc: { type: 'array', items: mucSchema },
+      tongQuan: tongQuanSchema,
+    },
+    required: ['title', 'muc'],
+    additionalProperties: false,
+  }
+
   const bodyStr = JSON.stringify({
     model: settings.model || 'claude-sonnet-4-6',
     max_tokens: maxTokens || 8000,
     messages,
-    stream: true, // BẬT STREAMING
+    stream: true,
+    output_config: {
+      format: {
+        type: 'json_schema',
+        schema,
+      },
+    },
   })
 
   // Thử tối đa 3 lần
