@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react'
 import { callClaude, parseJSON, settings } from './api'
 import { STEPS, STEP_LABELS, SECTIONS, PROMPT_PHAN1, PROMPT_PHAN2, PROMPT_PHAN3, PROMPT_PHAN4, PROMPT_PHAN5 } from './constants'
 import { lapLaSoAm, GIO_INFO, CHI_NAMES, loaiSao } from './laso-engine'
+import { buildDemoResult } from './demo-data'
 import styles from './App.module.css'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -542,6 +543,14 @@ export default function App() {
     setLaSo(ls)
     setStep('verify')
   }, [])
+  const handleDemo = useCallback(() => {
+    const demoInfo = { hoTen: 'Nguyễn Văn Demo', ngayAL: 12, thangAL: 9, namAL: 1996, gioIndex: 6, gioiTinh: 'Nam', namXem: new Date().getFullYear() }
+    const ls = lapLaSoAm(demoInfo.ngayAL, demoInfo.thangAL, demoInfo.namAL, demoInfo.gioIndex, demoInfo.gioiTinh)
+    setInfo(demoInfo)
+    setLaSo(ls)
+    setResult(buildDemoResult())
+    setStep('result')
+  }, [])
 
   const handleAnalyze = useCallback(async () => {
     setStep('analyzing'); setAnalyzeErr('')
@@ -595,7 +604,7 @@ export default function App() {
       <div className={`${styles.header} no-print`}>
         <div style={{fontSize:22}}>☯</div>
         <div style={{flex:1}}>
-          <div className={styles.headerTitle}>TỬ VI BY THÔI · Luận Giải Chuyên Nghiệp</div>
+          <div className={styles.headerTitle}>TEST 123 · Luận Giải Chuyên Nghiệp</div>
           <div className={styles.headerSub}>Phân tích 100 mục cho cuộc sống · Tham khảo · Suy ngẫm · Vận mệnh do mình</div>
         </div>
         {settings.isDesktop && (
@@ -606,6 +615,13 @@ export default function App() {
       <div className={styles.main}>
         <StepBar step={step} />
         {step==='info'      && <InfoForm onNext={handleInfoNext} />}
+        {step==='info' && (
+          <div style={{textAlign:'center',marginTop:12}}>
+            <button onClick={handleDemo} style={{background:'transparent',border:'1px dashed #c9a84c',color:'#c9a84c',padding:'8px 16px',borderRadius:6,cursor:'pointer',fontSize:13}}>
+              ⚡ Xem Demo (dữ liệu mẫu, không gọi API)
+            </button>
+          </div>
+        )}
         {step==='verify'    && laSo && <VerifyScreen laSo={laSo} onBack={()=>setStep('info')} onAnalyze={handleAnalyze} error={analyzeErr} />}
         {step==='analyzing' && <AnalyzingScreen name={info?.hoTen||''} progress={progress} />}
         {step==='result'    && result && <ResultScreen result={result} info={info} laSo={laSo} onNew={handleNew} />}
