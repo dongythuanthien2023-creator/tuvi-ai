@@ -2,6 +2,7 @@
 const { app, BrowserWindow, ipcMain, Menu } = require('electron')
 const path = require('path')
 const fs = require('fs')
+const https = require('https')
 
 // Nơi lưu cài đặt (API key) — trong thư mục userData của máy, an toàn, không lộ
 const settingsPath = () => path.join(app.getPath('userData'), 'settings.json')
@@ -64,85 +65,78 @@ ipcMain.handle('save-settings', (_e, obj) => {
   return writeSettings({ ...cur, ...obj })
 })
 
-// ── IPC: gọi thẳng Anthropic API (có Structured Outputs + retry) ────────────
+// ── Hàm gọi Anthropic bằng module https của Node (ổn định trong Electron) ───
+function postAnthropic(apiKey, bodyStr) {
+  return new Promise((resolve) => {
+    const options = {
+      hostname: 'api.anthropic.com',
+      path: '/v1/messages',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'Content-Length': Buffer.byteLength(bodyStr),
+      },
+      timeout: 120000,
+    }
+
+    console.log('[HTTPS] Bắt đầu gửi request...')
+    const req = https.request(options, (res) => {
+      console.log('[HTTPS] Đã nhận status:', res.statusCode)
+      let data = ''
+      res.on('data', (chunk) => { data += chunk })
+      res.on('end', () => {
+        console.log('[HTTPS] Đã nhận đủ dữ liệu, độ dài:', data.length)
+        try {
+          const json = JSON.parse(data)
+          if (res.statusCode >= 400) {
+            resolve({ error: { message: `HTTP ${res.statusCode}: ${data}` } })
+          } else {
+            resolve(json)
+          }
+        } catch (e) {
+          resolve({ error: { message: `Lỗi parse response: ${e.message}` } })
+        }
+      })
+    })
+
+    req.on('error', (err) => {
+      console.error('[HTTPS] Lỗi request:', err.message)
+      resolve({ error: { message: `Lỗi kết nối: ${err.message}` } })
+    })
+
+    req.on('timeout', () => {
+      console.error('[HTTPS] Timeout sau 120 giây')
+      req.destroy()
+      resolve({ error: { message: 'Request timeout sau 120 giây' } })
+    })
+
+    req.write(bodyStr)
+    req.end()
+  })
+}
+
+// ── IPC: gọi Anthropic API ──────────────────────────────────────────────────
 ipcMain.handle('call-claude', async (_e, { messages, maxTokens }) => {
   const settings = readSettings()
   const apiKey = settings.apiKey
   if (!apiKey) return { error: { message: 'Chưa cấu hình API key. Vào Cài đặt để nhập.' } }
 
-  // Schema ép model trả JSON đúng cấu trúc — không bao giờ vỡ cú pháp
-  const mucSchema = {
-    type: 'object',
-    properties: {
-      so: { type: 'integer' },
-      ten: { type: 'string' },
-      diem: { type: 'integer' },
-      tags: { type: 'array', items: { type: 'string' } },
-      noidung: { type: 'string' },
-      loiKhuyen: { type: 'string' },
-      canhBao: { type: 'string' },
-    },
-    required: ['so', 'ten', 'diem', 'tags', 'noidung', 'loiKhuyen', 'canhBao'],
-    additionalProperties: false,
-  }
-  const tongQuanSchema = {
-    type: 'object',
-    properties: {
-      sucNghiep: { type: 'integer' }, taiLoc: { type: 'integer' },
-      tinhDuyen: { type: 'integer' }, giaDao: { type: 'integer' },
-      sucKhoe: { type: 'integer' },
-      giaiDoanVang: { type: 'string' }, diemManhNhat: { type: 'string' },
-      diemYeuNhat: { type: 'string' }, tomluat: { type: 'string' },
-      thongDiepNam: { type: 'string' },
-    },
-    required: ['sucNghiep','taiLoc','tinhDuyen','giaDao','sucKhoe','giaiDoanVang','diemManhNhat','diemYeuNhat','tomluat','thongDiepNam'],
-    additionalProperties: false,
-  }
-  const schema = {
-    type: 'object',
-    properties: {
-      title: { type: 'string' },
-      muc: { type: 'array', items: mucSchema },
-      tongQuan: tongQuanSchema,
-    },
-    required: ['title', 'muc'],
-    additionalProperties: false,
-  }
-
-  const body = JSON.stringify({
+  const bodyStr = JSON.stringify({
     model: settings.model || 'claude-sonnet-4-6',
     max_tokens: maxTokens || 8000,
     messages,
   })
 
-  // Thử tối đa 3 lần, mỗi lần timeout 120 giây
-  let lastErr = null
+  // Thử tối đa 3 lần
+  let last = null
   for (let attempt = 1; attempt <= 3; attempt++) {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 120000)
-    try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body,
-        signal: controller.signal,
-      })
-      clearTimeout(timer)
-      const data = await res.json()
-      if (!res.ok) {
-        return { error: { message: `HTTP ${res.status}: ${JSON.stringify(data)}` } }
-      }
-      return data
-    } catch (err) {
-      clearTimeout(timer)
-      lastErr = err
-      console.error(`Lần gọi ${attempt} thất bại:`, err.message)
-      await new Promise(r => setTimeout(r, 2000))
-    }
+    console.log(`[CALL] Lần thử ${attempt}`)
+    last = await postAnthropic(apiKey, bodyStr)
+    if (!last.error) return last
+    console.error(`[CALL] Lần ${attempt} lỗi:`, last.error.message)
+    await new Promise(r => setTimeout(r, 2000))
   }
-  return { error: { message: `Gọi API thất bại sau 3 lần: ${lastErr?.message || 'unknown'}` } }
+  return last
 })
