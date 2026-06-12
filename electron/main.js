@@ -65,8 +65,8 @@ ipcMain.handle('save-settings', (_e, obj) => {
   return writeSettings({ ...cur, ...obj })
 })
 
-// ── Hàm gọi Anthropic bằng module https của Node (ổn định trong Electron) ───
-function postAnthropic(apiKey, bodyStr) {
+// ── Gọi Anthropic bằng STREAMING (ổn định cho output dài) ───────────────────
+function postAnthropicStream(apiKey, bodyStr) {
   return new Promise((resolve) => {
     const options = {
       hostname: 'api.anthropic.com',
@@ -78,38 +78,71 @@ function postAnthropic(apiKey, bodyStr) {
         'anthropic-version': '2023-06-01',
         'Content-Length': Buffer.byteLength(bodyStr),
       },
-      timeout: 120000,
+      timeout: 180000, // 3 phút - dư cho output dài
     }
 
-    console.log('[HTTPS] Bắt đầu gửi request...')
+    console.log('[STREAM] Bắt đầu gửi request...')
     const req = https.request(options, (res) => {
-      console.log('[HTTPS] Đã nhận status:', res.statusCode)
-      let data = ''
-      res.on('data', (chunk) => { data += chunk })
-      res.on('end', () => {
-        console.log('[HTTPS] Đã nhận đủ dữ liệu, độ dài:', data.length)
-        try {
-          const json = JSON.parse(data)
-          if (res.statusCode >= 400) {
-            resolve({ error: { message: `HTTP ${res.statusCode}: ${data}` } })
-          } else {
-            resolve(json)
+      console.log('[STREAM] Status:', res.statusCode)
+
+      // Nếu lỗi HTTP, gom toàn bộ body để báo lỗi
+      if (res.statusCode >= 400) {
+        let errData = ''
+        res.on('data', (c) => { errData += c })
+        res.on('end', () => resolve({ error: { message: `HTTP ${res.statusCode}: ${errData}` } }))
+        return
+      }
+
+      let fullText = ''
+      let buffer = ''
+
+      res.on('data', (chunk) => {
+        buffer += chunk.toString()
+        // SSE: mỗi event cách nhau bằng "\n\n", mỗi dòng data bắt đầu bằng "data: "
+        const lines = buffer.split('\n')
+        buffer = lines.pop() // giữ lại dòng chưa hoàn chỉnh
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed.startsWith('data:')) continue
+          const payload = trimmed.slice(5).trim()
+          if (payload === '[DONE]') continue
+          try {
+            const evt = JSON.parse(payload)
+            // Gom text từ các event content_block_delta
+            if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
+              fullText += evt.delta.text
+            }
+            // Bắt lỗi giữa stream
+            if (evt.type === 'error') {
+              console.error('[STREAM] Lỗi trong stream:', evt.error?.message)
+            }
+          } catch {
+            // bỏ qua dòng không parse được (vd: event ping)
           }
-        } catch (e) {
-          resolve({ error: { message: `Lỗi parse response: ${e.message}` } })
+        }
+      })
+
+      res.on('end', () => {
+        console.log('[STREAM] Hoàn tất, độ dài text:', fullText.length)
+        if (!fullText) {
+          resolve({ error: { message: 'Stream kết thúc nhưng không có nội dung' } })
+        } else {
+          // Trả về cùng cấu trúc như non-streaming để api.js xử lý không đổi
+          resolve({ content: [{ type: 'text', text: fullText }] })
         }
       })
     })
 
     req.on('error', (err) => {
-      console.error('[HTTPS] Lỗi request:', err.message)
+      console.error('[STREAM] Lỗi request:', err.message)
       resolve({ error: { message: `Lỗi kết nối: ${err.message}` } })
     })
 
     req.on('timeout', () => {
-      console.error('[HTTPS] Timeout sau 120 giây')
+      console.error('[STREAM] Timeout sau 180 giây')
       req.destroy()
-      resolve({ error: { message: 'Request timeout sau 120 giây' } })
+      resolve({ error: { message: 'Request timeout sau 180 giây' } })
     })
 
     req.write(bodyStr)
@@ -127,13 +160,14 @@ ipcMain.handle('call-claude', async (_e, { messages, maxTokens }) => {
     model: settings.model || 'claude-sonnet-4-6',
     max_tokens: maxTokens || 8000,
     messages,
+    stream: true, // BẬT STREAMING
   })
 
   // Thử tối đa 3 lần
   let last = null
   for (let attempt = 1; attempt <= 3; attempt++) {
     console.log(`[CALL] Lần thử ${attempt}`)
-    last = await postAnthropic(apiKey, bodyStr)
+    last = await postAnthropicStream(apiKey, bodyStr)
     if (!last.error) return last
     console.error(`[CALL] Lần ${attempt} lỗi:`, last.error.message)
     await new Promise(r => setTimeout(r, 2000))
