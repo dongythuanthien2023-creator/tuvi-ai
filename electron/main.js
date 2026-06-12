@@ -76,7 +76,7 @@ ipcMain.handle('call-claude', async (_e, { messages, maxTokens }) => {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: settings.model || 'claude-sonnet-4-5-20250929',
+        model: settings.model || 'claude-sonnet-4-6',
         max_tokens: maxTokens || 8000,
         messages,
       }),
