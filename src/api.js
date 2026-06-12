@@ -28,18 +28,26 @@ export async function callClaude(messages, maxTokens = 8000) {
 }
 
 export function parseJSON(text) {
-  const start = text.indexOf('{')
-  const end = text.lastIndexOf('}')
+  let raw = text.trim()
+    .replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '')
+  const start = raw.indexOf('{')
+  const end = raw.lastIndexOf('}')
   if (start === -1 || end === -1) {
     console.error('PARSE FAIL - không tìm thấy JSON. Response thô:', text)
     throw new Error('No JSON found')
   }
+  let slice = raw.slice(start, end + 1)
   try {
-    return JSON.parse(text.slice(start, end + 1))
+    return JSON.parse(slice)
   } catch (err) {
-    console.error('PARSE FAIL - JSON lỗi:', err.message)
-    console.error('Nội dung định parse:', text.slice(start, end + 1))
-    throw err
+    try {
+      const fixed = slice.replace(/,(\s*[}\]])/g, '$1').replace(/\r/g, '')
+      return JSON.parse(fixed)
+    } catch (err2) {
+      console.error('PARSE FAIL sau khi sửa:', err2.message)
+      console.error('Nội dung:', slice)
+      throw err2
+    }
   }
 }
 
