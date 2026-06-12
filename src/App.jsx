@@ -565,7 +565,7 @@ export default function App() {
         let parsed = null
         for (let attempt = 0; attempt < 2 && !parsed; attempt++) {
           try {
-            const text = await callClaude([{ role: 'user', content: prompt(info, laSo) }], 8000)
+            const text = await callClaude([{ role: 'user', content: prompt(info, laSo) }], 16000)
             parsed = parseJSON(text)
           } catch (e) {
             if (attempt === 1) throw e
