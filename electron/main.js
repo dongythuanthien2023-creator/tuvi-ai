@@ -64,29 +64,91 @@ ipcMain.handle('save-settings', (_e, obj) => {
   return writeSettings({ ...cur, ...obj })
 })
 
-// ── IPC: gọi thẳng Anthropic API (không qua proxy) ──────────────────────────
+// ── IPC: gọi thẳng Anthropic API (có Structured Outputs + retry) ────────────
 ipcMain.handle('call-claude', async (_e, { messages, maxTokens }) => {
   const settings = readSettings()
   const apiKey = settings.apiKey
   if (!apiKey) return { error: { message: 'Chưa cấu hình API key. Vào Cài đặt để nhập.' } }
 
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: settings.model || 'claude-sonnet-4-6',
-        max_tokens: maxTokens || 8000,
-        messages,
-      }),
-    })
-    const data = await res.json()
-    return data
-  } catch (err) {
-    return { error: { message: err.message } }
+  // Schema ép model trả JSON đúng cấu trúc — không bao giờ vỡ cú pháp
+  const mucSchema = {
+    type: 'object',
+    properties: {
+      so: { type: 'integer' },
+      ten: { type: 'string' },
+      diem: { type: 'integer' },
+      tags: { type: 'array', items: { type: 'string' } },
+      noidung: { type: 'string' },
+      loiKhuyen: { type: 'string' },
+      canhBao: { type: 'string' },
+    },
+    required: ['so', 'ten', 'diem', 'tags', 'noidung', 'loiKhuyen', 'canhBao'],
+    additionalProperties: false,
   }
+  const tongQuanSchema = {
+    type: 'object',
+    properties: {
+      sucNghiep: { type: 'integer' }, taiLoc: { type: 'integer' },
+      tinhDuyen: { type: 'integer' }, giaDao: { type: 'integer' },
+      sucKhoe: { type: 'integer' },
+      giaiDoanVang: { type: 'string' }, diemManhNhat: { type: 'string' },
+      diemYeuNhat: { type: 'string' }, tomluat: { type: 'string' },
+      thongDiepNam: { type: 'string' },
+    },
+    required: ['sucNghiep','taiLoc','tinhDuyen','giaDao','sucKhoe','giaiDoanVang','diemManhNhat','diemYeuNhat','tomluat','thongDiepNam'],
+    additionalProperties: false,
+  }
+  const schema = {
+    type: 'object',
+    properties: {
+      title: { type: 'string' },
+      muc: { type: 'array', items: mucSchema },
+      tongQuan: tongQuanSchema,
+    },
+    required: ['title', 'muc'],
+    additionalProperties: false,
+  }
+
+  const body = JSON.stringify({
+    model: settings.model || 'claude-sonnet-4-6',
+    max_tokens: maxTokens || 8000,
+    messages,
+    output_config: {
+      format: {
+        type: 'json_schema',
+        schema,
+      },
+    },
+  })
+
+  // Thử tối đa 3 lần, mỗi lần timeout 120 giây
+  let lastErr = null
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 120000)
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body,
+        signal: controller.signal,
+      })
+      clearTimeout(timer)
+      const data = await res.json()
+      if (!res.ok) {
+        return { error: { message: `HTTP ${res.status}: ${JSON.stringify(data)}` } }
+      }
+      return data
+    } catch (err) {
+      clearTimeout(timer)
+      lastErr = err
+      console.error(`Lần gọi ${attempt} thất bại:`, err.message)
+      await new Promise(r => setTimeout(r, 2000))
+    }
+  }
+  return { error: { message: `Gọi API thất bại sau 3 lần: ${lastErr?.message || 'unknown'}` } }
 })
