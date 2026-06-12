@@ -38,10 +38,10 @@ function createWindow() {
   // Khi đóng gói: nạp file build sẵn. Khi dev: nạp localhost.
   if (app.isPackaged) {
     mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
+    mainWindow.webContents.openDevTools()
   } else {
     mainWindow.loadURL('http://localhost:5173')
   }
-}
 
 app.whenReady().then(() => {
   createWindow()
