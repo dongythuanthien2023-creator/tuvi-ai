@@ -63,7 +63,9 @@ const PHONG_CACH = `YÊU CẦU PHONG CÁCH:
 - Điểm mạnh nói thẳng để tự tin; điểm yếu nói thật nhưng kèm hướng khắc phục
 - Mỗi mục viết 3-4 đoạn có chiều sâu, có ví dụ thực tế`
 
-const MUC_FORMAT = `Mỗi mục có cấu trúc: {"so":<số>,"ten":"<tên mục>","diem":<1-10>,"tags":["sao liên quan"],"noidung":"<3-4 đoạn phân tích chi tiết>","loiKhuyen":"<lời khuyên cụ thể>","canhBao":"<rủi ro cần tránh, để trống nếu không có>"}`
+const MUC_FORMAT = `QUAN TRỌNG VỀ JSON: Toàn bộ output PHẢI là JSON hợp lệ. Trong nội dung các chuỗi, TUYỆT ĐỐI KHÔNG dùng dấu ngoặc kép " — nếu cần nhấn mạnh hãy dùng dấu ngoặc đơn '. KHÔNG xuống dòng thật bên trong chuỗi, viết liền mạch. KHÔNG thêm dấu phẩy thừa sau phần tử cuối của mảng.
+
+Mỗi mục có cấu trúc: {"so":<số>,"ten":"<tên mục>","diem":<1-10>,"tags":["sao liên quan"],"noidung":"<3-4 đoạn phân tích chi tiết>","loiKhuyen":"<lời khuyên cụ thể>","canhBao":"<rủi ro cần tránh, để trống nếu không có>"}`
 
 // ── PHẦN 1: Mục 1-20 ────────────────────────────────────────────────────────
 export const PROMPT_PHAN1 = (info, ls) => `Bạn là chuyên gia Tử Vi kết hợp Y học cổ truyền. Phân tích PHẦN 1 (Cốt Cách & Nội Tâm) cho lá số sau.
