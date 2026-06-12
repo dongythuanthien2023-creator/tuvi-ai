@@ -10,6 +10,7 @@ function readSettings() {
   try { return JSON.parse(fs.readFileSync(settingsPath(), 'utf8')) }
   catch { return {} }
 }
+
 function writeSettings(obj) {
   try { fs.writeFileSync(settingsPath(), JSON.stringify(obj, null, 2)); return true }
   catch { return false }
@@ -42,6 +43,7 @@ function createWindow() {
   } else {
     mainWindow.loadURL('http://localhost:5173')
   }
+}
 
 app.whenReady().then(() => {
   createWindow()
@@ -56,6 +58,7 @@ app.on('window-all-closed', () => {
 
 // ── IPC: lưu/đọc API key ────────────────────────────────────────────────────
 ipcMain.handle('get-settings', () => readSettings())
+
 ipcMain.handle('save-settings', (_e, obj) => {
   const cur = readSettings()
   return writeSettings({ ...cur, ...obj })
