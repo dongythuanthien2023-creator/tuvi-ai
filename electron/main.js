@@ -25,7 +25,7 @@ function createWindow() {
     height: 860,
     minWidth: 980,
     minHeight: 640,
-    backgroundColor: '#0d0d1f',
+    backgroundColor: '#f8f8fa',
     title: 'Tử Vi by Thôi',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -40,7 +40,7 @@ function createWindow() {
   // Khi đóng gói: nạp file build sẵn. Khi dev: nạp localhost.
   if (app.isPackaged) {
     mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
-    mainWindow.webContents.openDevTools()
+    
   } else {
     mainWindow.loadURL('http://localhost:5173')
   }
@@ -218,4 +218,66 @@ ipcMain.handle('call-claude', async (_e, { messages, maxTokens }) => {
     await new Promise(r => setTimeout(r, 2000))
   }
   return last
+})
+// ── IPC: xuất PDF ───────────────────────────────────────────────────────────
+const { dialog } = require('electron')
+
+ipcMain.handle('print-to-pdf', async (_e, suggestedName) => {
+  if (!mainWindow) return { ok: false, error: 'Không tìm thấy cửa sổ' }
+  try {
+    // Gắn class 'printing' vào body — kích hoạt khối :global(body.printing) trong CSS
+    await mainWindow.webContents.executeJavaScript(
+      `document.body.classList.add('printing'); true;`
+    )
+    // Chờ 1 nhịp để CSS re-layout xong
+    await new Promise(r => setTimeout(r, 300))
+
+    const data = await mainWindow.webContents.printToPDF({
+      pageSize: 'A4',
+      landscape: false,
+      printBackground: true,
+      margins: { marginType: 'none' },
+      preferCSSPageSize: false,
+    })
+
+    // Gỡ class sau khi xuất
+    await mainWindow.webContents.executeJavaScript(
+      `document.body.classList.remove('printing'); true;`
+    )
+
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: 'Lưu lá số PDF',
+      defaultPath: `${suggestedName || 'la-so-tu-vi'}.pdf`,
+      filters: [{ name: 'PDF', extensions: ['pdf'] }],
+    })
+    if (canceled || !filePath) return { ok: false, canceled: true }
+
+    fs.writeFileSync(filePath, data)
+    return { ok: true, filePath }
+  } catch (err) {
+    return { ok: false, error: err.message }
+  }
+})
+// ── IPC: Lịch sử lá số (tối đa 5, mới nhất lên đầu) ─────────────────────────
+ipcMain.handle('get-history', () => {
+  const s = readSettings()
+  return Array.isArray(s.history) ? s.history : []
+})
+
+ipcMain.handle('save-history', (_e, record) => {
+  const s = readSettings()
+  const list = Array.isArray(s.history) ? s.history : []
+  const key = r => `${r?.info?.hoTen}|${r?.info?.ngayAL}|${r?.info?.thangAL}|${r?.info?.namAL}|${r?.info?.gioIndex}`
+  const filtered = list.filter(r => key(r) !== key(record))
+  const next = [{ ...record, savedAt: Date.now() }, ...filtered].slice(0, 5)
+  writeSettings({ ...s, history: next })
+  return next
+})
+
+ipcMain.handle('delete-history', (_e, savedAt) => {
+  const s = readSettings()
+  const list = Array.isArray(s.history) ? s.history : []
+  const next = list.filter(r => r.savedAt !== savedAt)
+  writeSettings({ ...s, history: next })
+  return next
 })

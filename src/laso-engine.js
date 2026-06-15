@@ -29,6 +29,52 @@ const NAP_AM = {
 }
 
 const mod12 = x => ((x % 12) + 12) % 12
+// ── Bảng Miếu/Vượng/Đắc/Hãm/Bình của 14 Chính tinh theo địa chi ─────────────
+// Trích từ "Tử Vi Đẩu Số Tân Biên" — Vân Đằng Thái Thứ Lang.
+// Cung nào sách không xếp loại thì để trống (không gán ký hiệu).
+const MIEU_HAM = {
+  'Tử Vi':       { M:['Tỵ','Ngọ','Dần','Thân'], V:['Thìn','Tuất'], Đ:['Sửu','Mùi'], B:['Hợi','Tý','Mão','Dậu'] },
+  'Liêm Trinh':  { M:['Thìn','Tuất'], V:['Tý','Ngọ','Dần','Thân'], Đ:['Sửu','Mùi'], H:['Tỵ','Hợi','Mão','Dậu'] },
+  'Thiên Đồng':  { M:['Dần','Thân'], V:['Tý'], Đ:['Mão','Tỵ','Hợi'], H:['Ngọ','Dậu','Thìn','Tuất','Sửu','Mùi'] },
+  'Vũ Khúc':     { M:['Thìn','Tuất','Sửu','Mùi'], V:['Dần','Thân','Tý','Ngọ'], Đ:['Mão','Dậu'], H:['Tỵ','Hợi'] },
+  'Thái Dương':  { M:['Tỵ','Ngọ'], V:['Dần','Mão','Thìn'], Đ:['Sửu','Mùi'], H:['Thân','Dậu','Tuất','Hợi','Tý'] },
+  'Thiên Cơ':    { M:['Thìn','Tuất','Mão','Dậu'], V:['Tỵ','Thân'], Đ:['Tý','Ngọ','Sửu','Mùi'], H:['Dần','Hợi'] },
+  'Thiên Phủ':   { M:['Dần','Thân','Tý','Ngọ'], V:['Thìn','Tuất'], Đ:['Tỵ','Hợi','Mùi'], B:['Mão','Dậu','Sửu'] },
+  'Thái Âm':     { M:['Dậu','Tuất','Hợi'], V:['Thân','Tý'], Đ:['Sửu','Mùi'], H:['Dần','Mão','Thìn','Tỵ','Ngọ'] },
+  'Tham Lang':   { M:['Sửu','Mùi'], V:['Thìn','Tuất'], Đ:['Dần','Thân'], H:['Tỵ','Hợi','Tý','Ngọ','Mão','Dậu'] },
+  'Cự Môn':      { M:['Mão','Dậu'], V:['Tý','Ngọ','Dần'], Đ:['Thân','Hợi'], H:['Thìn','Tuất','Sửu','Mùi','Tỵ'] },
+  'Thiên Tướng': { M:['Dần','Thân'], V:['Thìn','Tuất','Tý','Ngọ'], Đ:['Sửu','Mùi','Tỵ','Hợi'], H:['Mão','Dậu'] },
+  'Thiên Lương': { M:['Ngọ','Thìn','Tuất'], V:['Tý','Mão','Dần','Thân'], Đ:['Sửu','Mùi'], H:['Dậu','Tỵ','Hợi'] },
+  'Thất Sát':    { M:['Dần','Thân','Tý','Ngọ'], V:['Tỵ','Hợi'], Đ:['Sửu','Mùi'], H:['Mão','Dậu','Thìn','Tuất'] },
+  'Phá Quân':    { M:['Tý','Ngọ'], V:['Sửu','Mùi'], Đ:['Thìn','Tuất'], H:['Mão','Dậu','Dần','Thân','Tỵ','Hợi'] },
+}
+
+// Trả về ký hiệu trạng thái của 1 chính tinh tại 1 chi, hoặc '' nếu sách không xếp loại
+function trangThaiSao(tenSao, chiTen) {
+  const bang = MIEU_HAM[tenSao]
+  if (!bang) return ''
+  if (bang.M?.includes(chiTen)) return 'M'
+  if (bang.V?.includes(chiTen)) return 'V'
+  if (bang.Đ?.includes(chiTen)) return 'Đ'
+  if (bang.B?.includes(chiTen)) return 'B'
+  if (bang.H?.includes(chiTen)) return 'H'
+  return ''
+}
+
+// An Can cho 12 cung theo Ngũ Hổ Độn (suy từ Can năm)
+function anCanCung(canNamIdx) {
+  // Can của cung Dần theo nhóm Can năm
+  const canDanMap = { 0:2, 5:2, 1:4, 6:4, 2:6, 7:6, 3:8, 8:8, 4:0, 9:0 }
+  const canDan = canDanMap[canNamIdx]
+  // Đi thuận: Dần(2) → Mão(3) → ... gán can tăng dần
+  const canCung = {}
+  for (let i = 0; i < 12; i++) {
+    const chiIdx = mod12(2 + i)       // bắt đầu từ Dần
+    const canIdx = (canDan + i) % 10
+    canCung[chiIdx] = canIdx
+  }
+  return canCung  // { chiIdx: canIdx }
+}
 
 function lapCuc(canIdx, menhIdx) {
   const nhomCan = canIdx % 5
@@ -76,7 +122,7 @@ function anTuHoa(canIdx) {
     4:['Tham Lang','Thái Âm','Hữu Bật','Thiên Cơ'],
     5:['Vũ Khúc','Tham Lang','Thiên Lương','Văn Khúc'],
     6:['Thái Dương','Vũ Khúc','Thái Âm','Thiên Đồng'],
-    7:['Cự Môn','Thiên Lương','Văn Khúc','Văn Xương'],
+    7:['Cự Môn','Thái Dương','Văn Khúc','Văn Xương'],
     8:['Thiên Lương','Tử Vi','Tả Phụ','Vũ Khúc'],
     9:['Phá Quân','Cự Môn','Thái Âm','Tham Lang'],
   }
@@ -284,13 +330,21 @@ export function lapLaSoAm(amD, amM, amY, gioIndex, gioiTinh) {
     daiVan[idx]=[tu,tu+9]
   }
 
+  const canCungMap = anCanCung(canNamIdx)
   const cacCung={}
   for(let idx=0;idx<12;idx++){
     const ten=cungTen[idx]||''
     const isThan=idx===thanIdx
-    cacCung[CHI_NAMES[idx]]={
-      cung:ten, than:isThan, chi:CHI_NAMES[idx],
-      sao:cung[idx], daiVan:daiVan[idx],
+    const chiTen=CHI_NAMES[idx]
+    // Gắn ký hiệu M/V/Đ/B/H cho chính tinh theo địa chi (chỉ chính tinh)
+    const saoCoTrangThai=cung[idx].map(s=>{
+      const tt=trangThaiSao(s,chiTen)
+      return tt?`${s} (${tt})`:s
+    })
+    cacCung[chiTen]={
+      cung:ten, than:isThan, chi:chiTen,
+      can: CAN[canCungMap[idx]],
+      sao:saoCoTrangThai, daiVan:daiVan[idx],
       tuan:tuan.has(idx), triet:triet.has(idx),
     }
   }
@@ -326,10 +380,13 @@ export const PHU_TINH_TOT = ['Tả Phụ','Hữu Bật','Văn Xương','Văn Kh�
 export const PHU_TINH_XAU = ['Thiên Hình','Thiên Riêu','Thiên Khốc','Thiên Hư','Cô Thần','Quả Tú',
   'Kiếp Sát','Phá Toái','Hoa Cái','Lưu Hà','Đào Hoa','Hồng Loan','Thiên Hỷ','Thiên Không',
   'Tang Môn','Bạch Hổ','Tuế Phá','Điếu Khách','Đại Hao','Tiểu Hao']
+  export const VONG_TRANG_SINH = ['Tràng Sinh','Mộc Dục','Quan Đới','Lâm Quan','Đế Vượng','Suy','Bệnh','Tử','Mộ','Tuyệt','Thai','Dưỡng']
+export const VONG_BAC_SY = ['Bác Sỹ','Lực Sỹ','Thanh Long','Tiểu Hao','Tướng Quân','Tấu Thư','Phi Liêm','Hỷ Thần','Bệnh Phù','Đại Hao','Phục Binh','Quan Phủ']
+export const VONG_THAI_TUE = ['Thái Tuế','Thiếu Dương','Tang Môn','Thiếu Âm','Quan Phù','Tử Phù','Tuế Phá','Long Đức','Bạch Hổ','Phúc Đức','Điếu Khách','Trực Phù']
 
 export function loaiSao(ten) {
   // Bỏ hậu tố (M)(Đ)(H)(V) nếu có
-  const t = ten.replace(/\s*\([MĐHV]\)\s*$/, '').trim()
+  const t = ten.replace(/\s*\([MĐHVB]\)\s*$/, '').trim()
   if (CHINH_TINH.includes(t)) return 'chinh'
   if (TU_HOA.includes(t)) return 'hoa'
   if (SAT_TINH.includes(t)) return 'sat'

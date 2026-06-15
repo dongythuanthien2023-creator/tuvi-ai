@@ -52,11 +52,21 @@ const LASO_CONTEXT = (info, ls) => `THÔNG TIN KHÁCH: ${info.hoTen} | Giới t�
 Âm dương: ${ls.amDuong} | Bản mệnh: ${ls.banMenh} | Cục: ${ls.cuc}
 Mệnh tại ${ls.menhCung} | Thân cư cung ${ls.thanCu} (${ls.thanCung})
 
+CHÚ GIẢI TRẠNG THÁI CHÍNH TINH — ký hiệu trong ngoặc ngay sau tên sao:
+(M) = Miếu: sao ở vị trí mạnh nhất, phát huy tối đa, rất tốt.
+(V) = Vượng: sao mạnh, tốt.
+(Đ) = Đắc địa: sao khá, phát huy được.
+(B) = Bình hòa: trung bình.
+(H) = Hãm địa: sao yếu, kém phát huy, dễ lộ mặt xấu.
+Sao KHÔNG có ký hiệu là sao phụ — không xét miếu/vượng/hãm.
+BẮT BUỘC luận giải đúng theo ký hiệu này. Đây là dữ liệu chính xác từ engine lá số. TUYỆT ĐỐI KHÔNG tự suy diễn hay áp đặt trạng thái sao theo trí nhớ hoặc kiến thức nền — chỉ dùng đúng ký hiệu đã cho. Ví dụ: nếu ghi 'Thái Dương (M)' thì phải luận là Thái Dương Miếu (tốt), KHÔNG được viết là hãm.
+
 CHI TIẾT 12 CUNG (kèm sao và đại vận):
 ${fmt12Cung(ls)}`
 
 const PHONG_CACH = `YÊU CẦU PHONG CÁCH:
-- Ngôn ngữ gần gũi, hiện đại, phù hợp người trẻ 20-35 tuổi — KHÔNG dùng văn phong cổ điển khô khan
+- BẮT BUỘC viết HOÀN TOÀN bằng tiếng Việt thuần. TUYỆT ĐỐI KHÔNG chèn từ tiếng Anh hay bất kỳ ngoại ngữ nào vào nội dung. Mọi khái niệm phải dùng từ tiếng Việt (ví dụ: 'phục hồi' không 'heal', 'chuyển hóa' không 'transform', 'tiến về phía trước' không 'moving forward'). Nếu một thuật ngữ chuyên môn bắt buộc phải có, ghi tiếng Việt trước rồi mở ngoặc tiếng Anh.
+- Ngôn ngữ gần gũi, dễ hiểu, phù hợp người trẻ 20-35 tuổi — KHÔNG dùng văn phong cổ điển khô khan
 - Mỗi mục: luận giải từ SAO + CUNG cụ thể → liên hệ thực tế cuộc sống người trẻ hôm nay
 - Lời khuyên PHẢI cụ thể, thực hiện được ngay — không chung chung
 - Khi liên quan sức khỏe: tích hợp góc nhìn Y học cổ truyền (ngũ hành, tạng phủ, thực dưỡng)
