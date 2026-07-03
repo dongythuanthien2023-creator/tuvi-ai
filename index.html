@@ -1,13 +1,2450 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tử vi cùng Thôi - Chiêm nghiệm lá số đời bạn</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☯</text></svg>" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1a2e44">
+<title>Genkii CRM — Nhập khách hàng</title>
+<style>
+  /* ─── TOKENS ─── */
+  :root {
+    --navy:    #1a2e44;
+    --teal:    #2a8a7e;
+    --teal-lt: #e6f4f2;
+    --gold:    #c8922a;
+    --gold-lt: #fdf3e3;
+    --red:     #c0392b;
+    --red-lt:  #fdecea;
+    --green:   #1e7e5a;
+    --green-lt:#e6f5ef;
+    --grey-1:  #f4f5f7;
+    --grey-2:  #e8eaed;
+    --grey-3:  #9aa3af;
+    --grey-4:  #5a6473;
+    --text:    #1c2b3a;
+    --white:   #ffffff;
+    --radius:  12px;
+    --shadow:  0 2px 12px rgba(26,46,68,.10);
+  }
+
+  /* ─── RESET ─── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--text);
+    background: var(--grey-1);
+    min-height: 100dvh;
+  }
+
+  /* ─── HEADER ─── */
+  .app-header {
+    background: var(--navy);
+    padding: 16px 20px 14px;
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .app-header .logo {
+    width: 32px; height: 32px;
+    background: var(--teal);
+    border-radius: 8px;
+    display: grid; place-items: center;
+    font-weight: 800; color: #fff; font-size: 14px; letter-spacing: -.5px;
+  }
+  .app-header h1 {
+    font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -.2px;
+  }
+  .app-header span {
+    font-size: 12px; color: rgba(255,255,255,.55);
+    display: block; margin-top: 1px;
+  }
+
+  /* ─── LOOKUP BANNER ─── */
+  #lookup-banner {
+    display: none;
+    margin: 16px 16px 0;
+    background: var(--teal-lt);
+    border: 1.5px solid var(--teal);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  #lookup-banner.found  { background: var(--green-lt); border-color: var(--green); }
+  #lookup-banner.new    { background: var(--gold-lt);  border-color: var(--gold); }
+  #lookup-banner .banner-icon { font-size: 20px; margin-right: 8px; vertical-align: middle; }
+  #lookup-banner strong { font-weight: 700; }
+  #lookup-banner .banner-body { font-size: 13.5px; line-height: 1.5; }
+  #lookup-banner .last-log {
+    margin-top: 8px; padding: 8px 10px;
+    background: rgba(255,255,255,.65); border-radius: 8px;
+    font-size: 12.5px; color: var(--grey-4);
+    font-style: italic;
+  }
+
+  /* ─── FORM CARD ─── */
+  .form-card {
+    background: var(--white);
+    margin: 16px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .section-label {
+    padding: 12px 16px 10px;
+    font-size: 11px; font-weight: 700; letter-spacing: .8px;
+    text-transform: uppercase; color: var(--grey-3);
+    background: var(--grey-1);
+    border-bottom: 1px solid var(--grey-2);
+  }
+  .section-label span { color: var(--teal); }
+
+  /* ─── FIELD ─── */
+  .field { padding: 14px 16px; border-bottom: 1px solid var(--grey-2); }
+  .field:last-child { border-bottom: none; }
+  .field label {
+    display: block;
+    font-size: 12.5px; font-weight: 600; color: var(--grey-4);
+    margin-bottom: 6px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .field label .req { color: var(--red); font-size: 14px; line-height: 1; }
+  .field input,
+  .field select,
+  .field textarea {
+    width: 100%;
+    font-size: 15px; color: var(--text);
+    background: var(--grey-1);
+    border: 1.5px solid var(--grey-2);
+    border-radius: 8px;
+    padding: 11px 13px;
+    outline: none;
+    transition: border-color .15s, background .15s;
+    -webkit-appearance: none;
+    appearance: none;
+    font-family: inherit;
+  }
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus {
+    border-color: var(--teal);
+    background: var(--white);
+    box-shadow: 0 0 0 3px rgba(42,138,126,.12);
+  }
+  .field textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+  .field input[type="date"] { color-scheme: light; }
+  .field input.filled { background: var(--teal-lt); border-color: var(--teal); color: var(--navy); }
+  .field .hint { font-size: 11.5px; color: var(--grey-3); margin-top: 5px; }
+  .field.error input,
+  .field.error select,
+  .field.error textarea { border-color: var(--red); background: var(--red-lt); }
+  .field .err-msg { font-size: 12px; color: var(--red); margin-top: 4px; display: none; }
+  .field.error .err-msg { display: block; }
+
+  /* TRẠNG THÁI KHÓA — Nguồn lead / Sản phẩm / Nhiệt độ khi chưa đủ điều kiện mở khóa */
+  .field select:disabled {
+    background: var(--grey-2); color: var(--grey-3);
+    cursor: not-allowed; border-color: var(--grey-2);
+  }
+
+  /* DROPDOWN arrow */
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: '▾';
+    position: absolute; right: 13px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--grey-3); pointer-events: none; font-size: 13px;
+  }
+  .select-wrap select { padding-right: 32px; }
+
+  /* ─── NHIET DO TOGGLE ─── */
+  .temp-group {
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 8px;
+  }
+  .temp-btn {
+    padding: 10px 6px;
+    border-radius: 8px; border: 1.5px solid var(--grey-2);
+    background: var(--grey-1);
+    font-size: 13px; font-weight: 600; color: var(--grey-4);
+    cursor: pointer; text-align: center;
+    transition: all .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .temp-btn.hot  { border-color: var(--red);   background: var(--red-lt);   color: var(--red); }
+  .temp-btn.warm { border-color: var(--gold);  background: var(--gold-lt);  color: var(--gold); }
+  .temp-btn.cool { border-color: var(--teal);  background: var(--teal-lt);  color: var(--teal); }
+  .temp-btn:active { transform: scale(.97); }
+
+  /* ─── SUBMIT ─── */
+  .submit-area { padding: 16px; }
+  .btn-submit {
+    width: 100%; padding: 16px;
+    background: var(--teal);
+    color: #fff; font-size: 16px; font-weight: 700;
+    border: none; border-radius: var(--radius);
+    cursor: pointer; letter-spacing: -.1px;
+    transition: background .15s, transform .1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-submit:active { transform: scale(.98); }
+  .btn-submit:disabled { background: var(--grey-3); cursor: not-allowed; }
+  .btn-submit .sub-label { font-size: 12px; font-weight: 400; opacity: .85; display: block; margin-top: 2px; }
+
+  /* ─── TOAST ─── */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--navy); color: #fff;
+    padding: 12px 20px; border-radius: 32px;
+    font-size: 14px; font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,.25);
+    opacity: 0; pointer-events: none;
+    transition: opacity .3s, bottom .3s;
+    white-space: nowrap; z-index: 999;
+    max-width: calc(100vw - 32px);
+  }
+  #toast.show { opacity: 1; bottom: 32px; }
+  #toast.success { background: var(--green); }
+  #toast.error-t  { background: var(--red); }
+
+  /* ─── LOADING OVERLAY ─── */
+  #loading {
+    display: none; position: fixed; inset: 0;
+    background: rgba(26,46,68,.45); z-index: 100;
+    place-items: center;
+  }
+  #loading.show { display: grid; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid rgba(255,255,255,.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── TABS ─── */
+  .tab-bar {
+    display: flex; gap: 6px;
+    flex-wrap: wrap;                  /* v2.3.1: 5 tab tự xuống dòng — LUÔN hiện đủ,
+                                         không dùng cuộn ngang vì thanh cuộn ẩn khiến
+                                         tab cuối "biến mất" ngoài mép màn hình */
+    padding: 10px 16px 10px;
+    background: var(--navy);
+    row-gap: 6px;
+  }
+  .tab-btn {
+    flex: 1 1 auto; padding: 10px 10px;
+    white-space: nowrap;              /* nhãn tab không vỡ chữ giữa chừng */
+    background: rgba(255,255,255,.08);
+    border: none; border-radius: 10px;
+    color: rgba(255,255,255,.65);
+    font-size: 12.5px; font-weight: 700;
+    cursor: pointer; text-align: center;
+    transition: all .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tab-btn.active { background: var(--grey-1); color: var(--navy); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ─── COMPLETE ORDER PANEL ─── */
+  .order-info-card {
+    display: none;
+    background: var(--white);
+    margin: 16px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+  }
+  .order-info-card.show { display: block; }
+  .order-info-card .oi-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--grey-2); font-size: 13.5px; }
+  .order-info-card .oi-row:last-child { border-bottom: none; }
+  .order-info-card .oi-label { color: var(--grey-4); font-weight: 600; }
+  .order-info-card .oi-value { color: var(--text); font-weight: 600; text-align: right; max-width: 60%; }
+  .order-info-card .oi-log { margin-top: 10px; padding: 10px 12px; background: var(--grey-1); border-radius: 8px; font-size: 12.5px; color: var(--grey-4); font-style: italic; white-space: pre-line; }
+
+  /* ── v2.3: KHÁCH HÀNG (danh sách + chi tiết) ── */
+  .cust-wrap { padding: 14px 16px 28px; max-width: 560px; margin: 0 auto; }
+  .cust-toolbar { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .cust-toolbar input[type="search"] {
+    width: 100%; padding: 10px 14px; font-size: 14px;
+    border: 1.5px solid var(--grey-2); border-radius: 10px; background: var(--white);
+    outline: none;
+  }
+  .cust-toolbar input[type="search"]:focus { border-color: var(--teal); }
+  .cust-filters { display: flex; gap: 8px; }
+  .cust-filters select {
+    flex: 1; padding: 8px 10px; font-size: 12.5px; font-weight: 600;
+    border: 1.5px solid var(--grey-2); border-radius: 10px; background: var(--white);
+    color: var(--grey-4); outline: none;
+  }
+  .cust-count { font-size: 12px; color: var(--grey-3); display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .cust-count button { background: none; border: none; color: var(--teal); font-size: 12px; font-weight: 700; cursor: pointer; }
+  .cust-card {
+    background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 12px 14px; margin-bottom: 10px; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cust-card:active { transform: scale(.99); }
+  .cust-card .cc-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .cust-card .cc-name { font-size: 14.5px; font-weight: 700; color: var(--navy); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cust-card .cc-temp { flex-shrink: 0; font-size: 12px; }
+  .stage-badge {
+    display: inline-block; font-size: 10.5px; font-weight: 700;
+    padding: 2px 9px; border-radius: 999px; white-space: nowrap;
+    background: var(--grey-1); color: var(--grey-4);
+  }
+  .stage-badge.st-inbox   { background: #e8f0fb; color: #2f6bb5; }
+  .stage-badge.st-sdt     { background: #e8f0fb; color: #2f6bb5; }
+  .stage-badge.st-tuvan   { background: var(--gold-lt); color: var(--gold); }
+  .stage-badge.st-chot    { background: var(--navy); color: #fff; }
+  .stage-badge.st-cskh    { background: var(--teal-lt); color: var(--teal); }
+  .stage-badge.st-khachcu { background: var(--green-lt); color: var(--green); }
+  .stage-badge.st-ktn     { background: var(--grey-2); color: var(--grey-3); }
+  .cust-card .cc-mid { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--grey-4); margin-bottom: 6px; flex-wrap: wrap; }
+  .cust-card .cc-next { font-size: 12px; color: var(--grey-4); background: var(--grey-1); border-radius: 8px; padding: 6px 10px; display: flex; justify-content: space-between; gap: 8px; }
+  .cust-card .cc-next .cc-dl { flex-shrink: 0; font-weight: 700; color: var(--grey-4); }
+  .cust-card .cc-next .cc-dl.overdue { color: var(--red); }
+  .cust-card .cc-next .cc-ns { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Panel chi tiết */
+  .cd-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .cd-header .cd-back { background: var(--white); border: 1.5px solid var(--grey-2); border-radius: 10px; padding: 8px 12px; font-size: 13px; font-weight: 700; color: var(--grey-4); cursor: pointer; }
+  .cd-header .cd-name { font-size: 16px; font-weight: 800; color: var(--navy); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cd-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+  .cd-actions button { flex: 1; padding: 10px; font-size: 13px; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; }
+  .cd-actions .cd-edit { background: var(--teal); color: #fff; }
+  .cd-subtabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .cd-subtab { flex: 1; padding: 9px; font-size: 12.5px; font-weight: 700; text-align: center; border: none; border-radius: 10px; background: var(--white); color: var(--grey-4); cursor: pointer; box-shadow: var(--shadow); }
+  .cd-subtab.active { background: var(--navy); color: #fff; }
+  .cd-section { display: none; }
+  .cd-section.active { display: block; }
+  .cd-info-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 4px 14px; }
+  .cd-info-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--grey-2); font-size: 13px; }
+  .cd-info-row:last-child { border-bottom: none; }
+  .cd-info-row .ci-label { color: var(--grey-3); font-weight: 600; flex-shrink: 0; }
+  .cd-info-row .ci-value { color: var(--text); font-weight: 600; text-align: right; word-break: break-word; }
+  .hist-item { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px 14px; margin-bottom: 10px; }
+  .hist-item .hi-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .hist-item .hi-date { font-size: 12px; font-weight: 700; color: var(--navy); }
+  .hi-action { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--grey-1); color: var(--grey-4); }
+  .hi-action.a-create { background: var(--green-lt); color: var(--green); }
+  .hi-action.a-qc     { background: var(--gold-lt); color: var(--gold); }
+  .hi-action.a-don    { background: var(--navy); color: #fff; }
+  .hist-item .hi-content { font-size: 12.5px; color: var(--text); white-space: pre-line; }
+  .hist-item .hi-meta { font-size: 11px; color: var(--grey-3); margin-top: 6px; }
+  .cd-task { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 11px 14px; margin-bottom: 9px; display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; }
+  .cd-task .ct-main { flex: 1; }
+  .cd-task .ct-dl { font-size: 11.5px; color: var(--grey-3); margin-top: 2px; }
+  .cd-task .ct-status { flex-shrink: 0; font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; height: fit-content; }
+  .cd-task .ct-status.done { background: var(--green-lt); color: var(--green); }
+  .cd-task .ct-status.open { background: var(--gold-lt); color: var(--gold); }
+  .cd-task.is-done { opacity: .6; }
+
+  /* ── v2.4: SỔ THÔNG TIN KHÁCH TRONG THẺ NHIỆM VỤ ── */
+  .tc-clickable { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .tc-expand-hint {
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    font-size: 10.5px; color: var(--grey-3); margin-top: 8px; user-select: none;
+  }
+  .tc-expand-hint .chev { transition: transform .2s; display: inline-block; }
+  .task-card.expanded .tc-expand-hint .chev { transform: rotate(180deg); }
+  .tc-info { display: none; margin-top: 10px; border-top: 1.5px dashed var(--grey-2); padding-top: 4px; }
+  .task-card.expanded .tc-info { display: block; }
+  .tci-row {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 8px 2px; border-bottom: 1px solid var(--grey-1);
+    font-size: 12.5px; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tci-row:last-of-type { border-bottom: none; }
+  .tci-row:active { background: var(--teal-lt); border-radius: 6px; }
+  .tci-row .tci-label { color: var(--grey-3); font-weight: 600; flex-shrink: 0; }
+  .tci-row .tci-value { color: var(--text); font-weight: 700; text-align: right; word-break: break-word; }
+  .tci-hint { font-size: 10.5px; color: var(--grey-3); text-align: center; padding: 6px 0 2px; }
+  .tci-loading { text-align: center; color: var(--grey-3); font-size: 12px; padding: 12px 0; }
+
+  /* ── v2.2: DASHBOARD ── */
+  .dash-wrap { padding: 14px 16px 28px; max-width: 560px; margin: 0 auto; }
+  .dash-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .dash-meta .dash-time { font-size: 12px; color: var(--grey-3); }
+  .dash-meta button { background: none; border: none; color: var(--teal); font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .kpi-card {
+    background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 12px 14px;
+  }
+  .kpi-card .kpi-label { font-size: 12px; color: var(--grey-4); font-weight: 600; }
+  .kpi-card .kpi-value { font-size: 26px; font-weight: 800; color: var(--navy); line-height: 1.25; }
+  .kpi-card .kpi-sub   { font-size: 11.5px; color: var(--grey-3); }
+  .kpi-card .kpi-sub.up   { color: var(--green); font-weight: 700; }
+  .kpi-card .kpi-sub.down { color: var(--red); font-weight: 700; }
+  .kpi-card.danger .kpi-value { color: var(--red); }
+  .kpi-card.tappable { cursor: pointer; }
+  .dash-card {
+    background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 14px; margin-bottom: 16px;
+  }
+  .dash-card .dash-title { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 10px; }
+  .dash-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11.5px; color: var(--grey-4); margin-bottom: 8px; }
+  .dash-legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .dash-legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .chart-box { position: relative; width: 100%; }
+  .dash-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .dash-table th { text-align: right; color: var(--grey-3); font-weight: 600; padding: 6px 0; border-bottom: 1px solid var(--grey-2); }
+  .dash-table th:first-child, .dash-table td:first-child { text-align: left; }
+  .dash-table td { text-align: right; padding: 8px 0; border-bottom: 1px solid var(--grey-2); font-weight: 600; color: var(--text); }
+  .dash-table tr:last-child td { border-bottom: none; }
+  .dash-table td.oh { color: var(--red); }
+  .dash-empty { text-align: center; color: var(--grey-3); font-size: 13px; padding: 24px 0; }
+
+  /* ── v2.1: Khách click lại quảng cáo — chỉ hiện khi đang cập nhật khách cũ ── */
+  .clickqc-box {
+    display: none; /* mặc định ẩn — JS bật lên khi lookup ra khách cũ */
+    align-items: flex-start; gap: 10px;
+    padding: 12px 14px; margin-bottom: 14px;
+    background: #FFF7ED; border: 1.5px dashed #F59E0B; border-radius: 10px;
+    cursor: pointer; user-select: none;
+  }
+  .clickqc-box.visible { display: flex; }
+  .clickqc-box input[type="checkbox"] {
+    width: 20px; height: 20px; margin-top: 1px; flex-shrink: 0;
+    accent-color: #F59E0B; cursor: pointer;
+  }
+  .clickqc-box .clickqc-text { font-size: 13.5px; line-height: 1.45; }
+  .clickqc-box .clickqc-text b { color: #B45309; }
+  .clickqc-box .clickqc-sub { display: block; color: var(--grey-4); font-size: 12px; margin-top: 2px; }
+  .clickqc-box.checked { background: #FEF3C7; border-style: solid; }
+
+  .purchase-history-card {
+    background: var(--white);
+    margin: 16px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .ph-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--grey-2);
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13.5px;
+  }
+  .ph-item:last-child { border-bottom: none; }
+  .ph-date { color: var(--navy); font-weight: 700; }
+  .ph-content { color: var(--grey-4); font-size: 12.5px; max-width: 65%; text-align: right; }
+
+  /* ─── LOGIN SCREEN ─── */
+  #login-screen {
+    position: fixed; inset: 0; z-index: 500;
+    background: var(--navy);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  #login-screen.hide { display: none; }
+  .login-card {
+    background: var(--white); border-radius: 18px;
+    padding: 32px 24px; width: 100%; max-width: 360px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.3);
+  }
+  .login-card .login-logo {
+    width: 52px; height: 52px; background: var(--teal); border-radius: 14px;
+    display: grid; place-items: center; font-weight: 800; color: #fff;
+    font-size: 22px; margin: 0 auto 16px;
+  }
+  .login-card h2 { text-align: center; font-size: 19px; color: var(--navy); margin-bottom: 4px; }
+  .login-card p.sub { text-align: center; font-size: 13px; color: var(--grey-3); margin-bottom: 22px; }
+  .login-field { margin-bottom: 14px; }
+  .login-field label { display: block; font-size: 12.5px; font-weight: 600; color: var(--grey-4); margin-bottom: 6px; }
+  .login-field select, .login-field input {
+    width: 100%; font-size: 15px; padding: 12px 13px;
+    border: 1.5px solid var(--grey-2); border-radius: 8px;
+    background: var(--grey-1); outline: none;
+  }
+  .login-field select:focus, .login-field input:focus { border-color: var(--teal); background: #fff; }
+  .login-error { font-size: 12.5px; color: var(--red); margin-top: 8px; text-align: center; display: none; }
+  .login-error.show { display: block; }
+  .btn-login {
+    width: 100%; margin-top: 6px; padding: 14px;
+    background: var(--teal); color: #fff; font-size: 15px; font-weight: 700;
+    border: none; border-radius: 10px; cursor: pointer;
+  }
+  .btn-login:active { transform: scale(.98); }
+  .logged-in-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 16px; background: rgba(255,255,255,.07);
+    font-size: 12px; color: rgba(255,255,255,.75);
+  }
+  .logged-in-bar button {
+    background: none; border: none; color: rgba(255,255,255,.6);
+    font-size: 12px; cursor: pointer; text-decoration: underline;
+  }
+
+  /* ─── TASK LIST (Nhiệm vụ hôm nay) ─── */
+  .task-section-title {
+    padding: 16px 16px 8px; font-size: 13px; font-weight: 700;
+    color: var(--navy); display: flex; align-items: center; gap: 6px;
+  }
+  .task-count-badge {
+    background: var(--red); color: #fff; font-size: 11px; font-weight: 700;
+    padding: 2px 7px; border-radius: 10px;
+  }
+  .task-count-badge.zero { background: var(--grey-3); }
+  .task-card {
+    background: var(--white); margin: 0 16px 10px; border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 14px 16px;
+    border-left: 4px solid var(--teal);
+  }
+  .task-card.overdue { border-left-color: var(--red); }
+  .task-card.done { border-left-color: var(--green); opacity: .75; }
+  .task-card .tc-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .task-card .tc-name { font-weight: 700; color: var(--navy); font-size: 14.5px; }
+  .task-card .tc-deadline { font-size: 11.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: var(--teal-lt); color: var(--teal); white-space: nowrap; }
+  .task-card.overdue .tc-deadline { background: var(--red-lt); color: var(--red); }
+  .task-card .tc-deadline.done-badge { background: var(--green-lt); color: var(--green); }
+  .task-card .tc-content { font-size: 13px; color: var(--grey-4); margin-bottom: 10px; }
+  .task-card.done .tc-content { margin-bottom: 0; text-decoration: line-through; }
+  .task-card .tc-meta { font-size: 12px; color: var(--grey-3); margin-bottom: 8px; }
+  .task-card .tc-actions { display: flex; gap: 8px; }
+  .tc-btn {
+    flex: 1; padding: 9px; border-radius: 8px; border: 1.5px solid var(--grey-2);
+    background: var(--grey-1); font-size: 12.5px; font-weight: 700; cursor: pointer;
+  }
+  .tc-btn.done { border-color: var(--green); color: var(--green); }
+  .tc-btn.done:active { background: var(--green-lt); }
+  .tc-btn.postpone { border-color: var(--gold); color: var(--gold); }
+  .tc-btn.postpone:active { background: var(--gold-lt); }
+  .task-empty { text-align: center; padding: 24px; color: var(--grey-3); font-size: 13px; }
+
+  /* Modal dời lịch */
+  #postpone-modal {
+    display: none; position: fixed; inset: 0; z-index: 600;
+    background: rgba(26,46,68,.5); align-items: center; justify-content: center; padding: 20px;
+  }
+  #postpone-modal.show { display: flex; }
+  .postpone-card { background: #fff; border-radius: 14px; padding: 20px; width: 100%; max-width: 360px; }
+  .postpone-card h3 { font-size: 15px; color: var(--navy); margin-bottom: 14px; }
+  .postpone-card .login-field { margin-bottom: 12px; }
+  .postpone-card .pc-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .pc-cancel { flex: 1; padding: 11px; border-radius: 8px; border: 1.5px solid var(--grey-2); background: var(--grey-1); font-weight: 700; cursor: pointer; }
+  .pc-confirm { flex: 1; padding: 11px; border-radius: 8px; border: none; background: var(--gold); color: #fff; font-weight: 700; cursor: pointer; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (min-width: 480px) {
+    .form-card { max-width: 520px; margin: 20px auto; }
+    .app-header { justify-content: center; }
+    #lookup-banner { max-width: 520px; margin: 16px auto 0; }
+    .submit-area { max-width: 520px; margin: 0 auto; }
+    .tab-bar { max-width: 552px; margin: 0 auto; padding-top: 12px; }
+    .order-info-card { max-width: 520px; margin: 16px auto; }
+    .purchase-history-card { max-width: 520px; margin: 16px auto; }
+    .task-card { max-width: 520px; margin: 0 auto 10px; }
+    .task-section-title { max-width: 520px; margin: 0 auto; padding-top: 16px; }
+  }
+</style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.jsx"></script>
+
+<!-- ══════════════ MÀN HÌNH ĐĂNG NHẬP ══════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">G</div>
+    <h2>Genkii CRM</h2>
+    <p class="sub">Chọn tên và xác nhận SĐT hotline để tiếp tục</p>
+
+    <div class="login-field">
+      <label>Sales</label>
+      <select id="login-sales">
+        <option value="">— Chọn Sales —</option>
+        <option data-phone="0964925283">Ngô Vũ</option>
+        <option data-phone="0906929216">Nguyễn Thị Thùy Linh</option>
+      </select>
+    </div>
+
+    <div class="login-field">
+      <label>SĐT hotline (xác nhận đúng người)</label>
+      <input type="tel" id="login-phone" placeholder="Nhập SĐT hotline đã đăng ký" inputmode="numeric">
+    </div>
+
+    <button type="button" class="btn-login" onclick="doLogin()">Đăng nhập</button>
+    <div class="login-error" id="login-error">SĐT không khớp với Sales đã chọn</div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL DỜI LỊCH (dùng chung cho cả 2 loại nhiệm vụ) ══════════════ -->
+<div id="postpone-modal">
+  <div class="postpone-card">
+    <h3>Chưa hoàn thành — dời lịch</h3>
+    <div class="login-field">
+      <label>Lý do</label>
+      <input type="text" id="postpone-reason" placeholder="VD: Khách bận, hẹn gọi lại sau">
+    </div>
+    <div class="login-field">
+      <label>Ngày dự kiến mới</label>
+      <input type="date" id="postpone-date">
+    </div>
+    <div class="pc-actions">
+      <button type="button" class="pc-cancel" onclick="closePostponeModal()">Hủy</button>
+      <button type="button" class="pc-confirm" onclick="confirmPostpone()">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<header class="app-header">
+  <div class="logo">G</div>
+  <div>
+    <h1>Genkii CRM</h1>
+    <span>Cập nhật khách hàng nhanh</span>
+  </div>
+</header>
+
+<div class="logged-in-bar">
+  <span>👤 Đang đăng nhập: <b id="logged-in-name">—</b></span>
+  <button type="button" onclick="doLogout()">Đăng xuất</button>
+</div>
+
+<div class="tab-bar">
+  <button type="button" class="tab-btn active" id="tab-btn-update" onclick="switchTab('update')">✍️ Nhập / Cập nhật</button>
+  <button type="button" class="tab-btn" id="tab-btn-complete" onclick="switchTab('complete')">✅ Hoàn thành đơn</button>
+  <button type="button" class="tab-btn" id="tab-btn-tasks" onclick="switchTab('tasks')">🔔 Nhiệm vụ</button>
+  <button type="button" class="tab-btn" id="tab-btn-cust" onclick="switchTab('cust')">👥 Khách hàng</button>
+  <button type="button" class="tab-btn" id="tab-btn-dash" onclick="switchTab('dash')">📊 Thống kê</button>
+</div>
+
+<!-- ══════════════ TAB 1: NHẬP / CẬP NHẬT (nội dung cũ, không đổi logic) ══════════════ -->
+<div class="tab-panel active" id="tab-panel-update">
+
+<div id="lookup-banner"></div>
+
+<form id="crm-form" novalidate>
+
+  <!-- ── PHẦN 1: NHẬN DIỆN KHÁCH ── -->
+  <div class="form-card">
+    <div class="section-label">1 — Nhận diện khách <span>/ tự động tìm nếu đã có</span></div>
+
+    <div class="field" id="f-sales">
+      <label>Sales phụ trách <span class="req">*</span></label>
+      <div class="select-wrap">
+        <select id="sales" required>
+          <option value="">— Chọn Sales —</option>
+          <option>Ngô Vũ</option>
+          <option>Nguyễn Thị Thùy Linh</option>
+          <option>Khác</option>
+        </select>
+      </div>
+      <div class="err-msg">Vui lòng chọn Sales phụ trách</div>
+    </div>
+
+    <div class="field" id="f-name">
+      <label>Họ tên khách <span class="req">*</span></label>
+      <input type="text" id="name" placeholder="Ví dụ: Nguyễn Thị Lan"
+             autocomplete="name" required>
+      <div class="hint">Nhập xong → bấm ra ngoài, hệ thống tự kiểm tra trùng</div>
+      <div class="err-msg">Vui lòng nhập họ tên khách</div>
+    </div>
+
+    <div class="field" id="f-phone">
+      <label>Số điện thoại</label>
+      <input type="tel" id="phone" placeholder="09xx xxx xxx (có thể bỏ trống nếu chưa có)"
+             inputmode="numeric" autocomplete="tel">
+      <div class="hint">Chưa có SĐT (khách mới Inbox) vẫn lưu được bình thường</div>
+      <div class="err-msg">Số điện thoại không hợp lệ (cần 9–11 số)</div>
+    </div>
+
+    <div class="field" id="f-location">
+      <label>Cơ sở / Địa chỉ</label>
+      <input type="text" id="location" placeholder="Ví dụ: Spa Hoa Lan – Q.3, HCM">
+    </div>
+
+  </div>
+
+  <!-- ── PHẦN 2: NGUỒN LEAD & SẢN PHẨM (luôn hiện, khóa/mở theo isUnlocked) ── -->
+  <div class="form-card" id="section-source-product">
+    <div class="section-label" id="section-source-label">2 — Nguồn lead & Sản phẩm <span>/ chỉ sửa được sau khi khách đã Chốt 1 vòng</span></div>
+
+    <div class="field" id="f-source">
+      <label>Nguồn lead <span class="req">*</span></label>
+      <div class="select-wrap">
+        <select id="source">
+          <option value="">— Chọn nguồn —</option>
+          <option>Facebook Ads</option>
+          <option>TikTok</option>
+          <option>Referral – Khách cũ giới thiệu</option>
+          <option>Zalo OA</option>
+          <option>Website</option>
+          <option>Sự kiện</option>
+          <option>Khách cũ</option>
+          <option>Khác</option>
+        </select>
+      </div>
+      <div class="hint" id="source-lock-hint" style="display:none">🔒 Đang khóa — khách chưa hoàn thành vòng Chốt trước đó nên giữ nguyên nguồn gốc</div>
+    </div>
+
+    <div class="field" id="f-product">
+      <label>Sản phẩm quan tâm <span class="req">*</span></label>
+      <div class="select-wrap">
+        <select id="product">
+          <option value="">— Chọn sản phẩm —</option>
+          <option>Genkii BES</option>
+          <option>Genkii ZEN+</option>
+          <option>Bamboo Aura</option>
+          <option>Genkii Hub (BES + ZEN+ + Bamboo)</option>
+          <option>BES + ZEN+</option>
+          <option>Chưa rõ</option>
+        </select>
+      </div>
+      <div class="hint" id="product-lock-hint" style="display:none">🔒 Đang khóa — giữ nguyên sản phẩm của vòng hiện tại</div>
+    </div>
+
+  </div>
+
+  <!-- ── PHẦN 3: CẬP NHẬT LẦN NÀY ── -->
+  <div class="form-card" id="section-update">
+    <div class="section-label" id="section-update-label">2 — Cập nhật lần này</div>
+
+    <!-- v2.1: chỉ hiện khi lookup ra KHÁCH CŨ. Tick = khách vừa nhắn lại qua quảng cáo
+         → backend ghi 'update_click_qc' và tính 1 lượt nhập mới trong ngày.
+         Mỗi lần tick + lưu = 1 lượt riêng (khách click 2 lần/ngày = 2 lượt). -->
+    <label class="clickqc-box" id="clickqc-box">
+      <input type="checkbox" id="clickqc" onchange="onClickQCChange(this)">
+      <span class="clickqc-text">
+        🔁 <b>Khách click lại quảng cáo</b> — tin nhắn lần này phát sinh từ quảng cáo
+        <span class="clickqc-sub">Chỉ tick khi khách CŨ vừa nhắn lại qua ads. Sẽ tính là 1 lượt mới trong thống kê ngày. Cập nhật trao đổi thường thì KHÔNG tick.</span>
+      </span>
+    </label>
+
+    <div class="field" id="f-stage">
+      <label>Giai đoạn hiện tại <span class="req">*</span></label>
+      <div class="select-wrap">
+        <select id="stage" required>
+          <option value="">— Chọn giai đoạn —</option>
+          <option>Inbox</option>
+          <option>SĐT - Chưa add Zalo</option>
+          <option>Đã add Zalo - Tư vấn</option>
+          <option>Chốt</option>
+          <option>Không tiềm năng</option>
+          <option>Khách cũ</option>
+          <option>Khách yêu cầu đặc biệt</option>
+        </select>
+      </div>
+      <div class="err-msg">Vui lòng chọn giai đoạn</div>
+    </div>
+
+    <div class="field" id="f-temp">
+      <label>Nhiệt độ lead</label>
+      <div class="temp-group">
+        <button type="button" class="temp-btn" data-val="Nóng" onclick="selectTemp(this)">🔴 Nóng</button>
+        <button type="button" class="temp-btn" data-val="Ấm"   onclick="selectTemp(this)">🟡 Ấm</button>
+        <button type="button" class="temp-btn" data-val="Mát"  onclick="selectTemp(this)">🟢 Mát</button>
+      </div>
+      <input type="hidden" id="temp" value="">
+    </div>
+
+    <div class="field" id="f-content">
+      <label>Nội dung liên hệ lần này <span class="req">*</span></label>
+      <textarea id="content" rows="3"
+        placeholder="VD: Gọi lần 2. Khách hỏi về hoàn vốn, hiện có 2 KTV lương 8tr/người. Quan tâm nhưng chờ chồng đồng ý."
+        required></textarea>
+      <div class="hint">Ghi: Đã làm gì · Khách phản hồi gì · Vướng mắc nếu có</div>
+      <div class="err-msg">Vui lòng nhập nội dung liên hệ</div>
+    </div>
+
+    <div class="field" id="f-nextstep">
+      <label>Next Step cụ thể <span class="req">*</span></label>
+      <input type="text" id="nextstep"
+        placeholder="VD: Gọi lại thứ 4 (25/6), hỏi quyết định & gửi bảng hoàn vốn"
+        required>
+      <div class="hint">Phải trả lời: Làm gì? + Khi nào? + Như thế nào?</div>
+      <div class="err-msg">Vui lòng nhập Next Step cụ thể</div>
+    </div>
+
+    <div class="field" id="f-deadline">
+      <label>Deadline Next Step <span class="req">*</span></label>
+      <input type="date" id="deadline" required>
+      <div class="err-msg">Vui lòng chọn ngày deadline</div>
+    </div>
+
+    <div class="field" id="f-note">
+      <label>Ghi chú thêm</label>
+      <input type="text" id="note"
+        placeholder="VD: Zalo chặn người lạ, liên hệ qua FB · Có 2 cơ sở...">
+    </div>
+
+  </div>
+
+  <div class="submit-area">
+    <button type="submit" class="btn-submit" id="btn-submit">
+      Lưu vào CRM
+      <span class="sub-label" id="btn-label">Điền số điện thoại để tiếp tục</span>
+    </button>
+  </div>
+
+</form>
+
+<!-- Yêu cầu 7: lịch sử mua hàng — chỉ hiện khi khách đã từng Chốt ít nhất 1 lần -->
+<div class="purchase-history-card" id="purchase-history-card" style="display:none">
+  <div class="section-label">📦 Lịch sử mua hàng</div>
+  <div id="purchase-history-list"></div>
+</div>
+
+</div> <!-- /tab-panel-update -->
+
+<!-- ══════════════ TAB 2: HOÀN THÀNH ĐƠN HÀNG (yêu cầu 5, 6) ══════════════ -->
+<div class="tab-panel" id="tab-panel-complete">
+
+  <div class="form-card">
+    <div class="section-label">1 — Xác nhận khách hàng <span>/ phải khớp đúng Tên + SĐT</span></div>
+
+    <div class="field" id="f-co-name">
+      <label>Họ tên khách <span class="req">*</span></label>
+      <input type="text" id="co-name" placeholder="Nhập đúng họ tên đã lưu trong CRM" autocomplete="name">
+      <div class="err-msg">Vui lòng nhập họ tên khách</div>
+    </div>
+
+    <div class="field" id="f-co-phone">
+      <label>Số điện thoại <span class="req">*</span></label>
+      <input type="tel" id="co-phone" placeholder="Nhập đúng SĐT đã lưu trong CRM" inputmode="numeric" autocomplete="tel">
+      <div class="hint">Nhập đủ cả Tên và SĐT → bấm ra ngoài để kiểm tra</div>
+      <div class="err-msg">Vui lòng nhập số điện thoại</div>
+    </div>
+
+  </div>
+
+  <div class="order-info-card" id="order-info-card">
+    <div class="oi-row"><span class="oi-label">Khách hàng</span><span class="oi-value" id="oi-name">—</span></div>
+    <div class="oi-row"><span class="oi-label">Giai đoạn hiện tại</span><span class="oi-value" id="oi-stage">—</span></div>
+    <div class="oi-row"><span class="oi-label">Sản phẩm quan tâm</span><span class="oi-value" id="oi-product">—</span></div>
+    <div class="oi-log" id="oi-lastlog">—</div>
+  </div>
+
+  <div class="submit-area">
+    <button type="button" class="btn-submit" id="btn-complete" disabled style="background:var(--grey-3)">
+      Hoàn thành đơn hàng
+      <span class="sub-label" id="btn-complete-label">Nhập đủ Tên + SĐT khớp đúng khách đang ở giai đoạn Chốt</span>
+    </button>
+  </div>
+
+</div> <!-- /tab-panel-complete -->
+
+<!-- ══════════════ TAB 3: NHIỆM VỤ HÔM NAY ══════════════ -->
+<div class="tab-panel" id="tab-panel-tasks">
+
+  <div style="padding:14px 16px 0; text-align:right;">
+    <button type="button" onclick="loadTodayTasks()" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;cursor:pointer;">🔄 Làm mới danh sách</button>
+  </div>
+
+  <div class="task-section-title">
+    🔥 Next Step cần xử lý
+    <span class="task-count-badge zero" id="badge-nextstep">0</span>
+  </div>
+  <div id="list-nextstep"><div class="task-empty">Đang tải...</div></div>
+
+  <div class="task-section-title">
+    💬 Nhắc hỏi thăm CSKH
+    <span class="task-count-badge zero" id="badge-cskh">0</span>
+  </div>
+  <div id="list-cskh"><div class="task-empty">Đang tải...</div></div>
+
+</div> <!-- /tab-panel-tasks -->
+
+<!-- ── TAB 4: KHÁCH HÀNG (v2.3) ── -->
+<div class="tab-panel" id="tab-panel-cust">
+  <div class="cust-wrap">
+
+    <!-- Màn 1: DANH SÁCH -->
+    <div id="cust-list-view">
+      <div class="cust-toolbar">
+        <input type="search" id="cust-search" placeholder="🔍 Tìm theo tên hoặc SĐT..." oninput="renderCustomerList()">
+        <div class="cust-filters">
+          <select id="cust-filter-stage" onchange="renderCustomerList()">
+            <option value="">Tất cả giai đoạn</option>
+          </select>
+          <select id="cust-filter-sales" onchange="renderCustomerList()">
+            <option value="">Tất cả Sales</option>
+          </select>
+        </div>
+      </div>
+      <div class="cust-count">
+        <span id="cust-count-label">Đang tải...</span>
+        <button type="button" onclick="loadCustomerList(true)">🔄 Làm mới</button>
+      </div>
+      <div id="cust-list"></div>
+    </div>
+
+    <!-- Màn 2: CHI TIẾT 1 KHÁCH -->
+    <div id="cust-detail-view" style="display:none">
+      <div class="cd-header">
+        <button type="button" class="cd-back" onclick="backToCustomerList()">← Danh sách</button>
+        <div class="cd-name" id="cd-name">—</div>
+      </div>
+      <div class="cd-actions">
+        <button type="button" class="cd-edit" onclick="gotoUpdateFromDetail()">✏️ Cập nhật khách này</button>
+      </div>
+      <div class="cd-subtabs">
+        <button type="button" class="cd-subtab active" id="cd-tab-info"    onclick="switchDetailTab('info')">Thông tin</button>
+        <button type="button" class="cd-subtab" id="cd-tab-history" onclick="switchDetailTab('history')">Lịch sử</button>
+        <button type="button" class="cd-subtab" id="cd-tab-tasks"   onclick="switchDetailTab('tasks')">Nhiệm vụ</button>
+      </div>
+      <div class="cd-section active" id="cd-sec-info"><div class="dash-empty">Đang tải...</div></div>
+      <div class="cd-section" id="cd-sec-history"></div>
+      <div class="cd-section" id="cd-sec-tasks"></div>
+    </div>
+
+  </div>
+</div> <!-- /tab-panel-cust -->
+
+<!-- ── TAB 5: DASHBOARD (v2.2) ── -->
+<div class="tab-panel" id="tab-panel-dash">
+  <div class="dash-wrap">
+
+    <div class="dash-meta">
+      <span class="dash-time" id="dash-time">Chưa tải dữ liệu</span>
+      <button type="button" onclick="loadDashboard(true)">🔄 Làm mới</button>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Tổng lượt hôm nay</div>
+        <div class="kpi-value" id="kpi-tong">–</div>
+        <div class="kpi-sub" id="kpi-delta">so với hôm qua</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Khách mới</div>
+        <div class="kpi-value" id="kpi-moi">–</div>
+        <div class="kpi-sub">tạo lần đầu hôm nay</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Click lại quảng cáo</div>
+        <div class="kpi-value" id="kpi-qc">–</div>
+        <div class="kpi-sub" id="kpi-qc-uniq">– khách unique</div>
+      </div>
+      <div class="kpi-card danger tappable" onclick="switchTab('tasks')" title="Bấm để mở tab Nhiệm vụ">
+        <div class="kpi-label">Nhiệm vụ quá hạn</div>
+        <div class="kpi-value" id="kpi-overdue">–</div>
+        <div class="kpi-sub">bấm để xem chi tiết →</div>
+      </div>
+    </div>
+
+    <div class="dash-card">
+      <div class="dash-title">Lượt nhập 14 ngày gần nhất</div>
+      <div class="dash-legend">
+        <span><i style="background:#2a8a7e"></i>Khách mới</span>
+        <span><i style="background:#c8922a"></i>Click lại quảng cáo</span>
+      </div>
+      <div class="chart-box" style="height:210px;"><canvas id="chart-daily"></canvas></div>
+    </div>
+
+    <div class="dash-card">
+      <div class="dash-title">Phễu giai đoạn — toàn bộ khách hiện tại</div>
+      <div class="chart-box" id="chart-funnel-box" style="height:230px;"><canvas id="chart-funnel"></canvas></div>
+    </div>
+
+    <div class="dash-card">
+      <div class="dash-title" id="src-title">Nguồn lead tháng này</div>
+      <div class="dash-legend" id="src-legend"></div>
+      <div class="chart-box" style="height:190px;"><canvas id="chart-src"></canvas></div>
+    </div>
+
+    <div class="dash-card">
+      <div class="dash-title">Hoạt động theo Sales — tháng này</div>
+      <table class="dash-table" id="sales-table">
+        <thead><tr><th>Sales</th><th>Lượt</th><th>Khách mới</th><th>Đơn</th><th>Quá hạn</th></tr></thead>
+        <tbody><tr><td colspan="5" class="dash-empty">Đang tải...</td></tr></tbody>
+      </table>
+    </div>
+
+  </div>
+</div> <!-- /tab-panel-dash -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+<div id="toast"></div>
+<div id="loading"><div class="spinner"></div></div>
+
+<script>
+// ══════════════════════════════════════════════
+// CONFIG — thay bằng URL Apps Script sau khi deploy
+// ══════════════════════════════════════════════
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxMsnv8esDocjnhACVwS0kzETiJXTjCqthxxNP-jR8y58XG6UOCftO4rlmWYaTiebaC/exec';
+
+// ──────────────────────────────────────────────
+// STATE
+// ──────────────────────────────────────────────
+let lookupResult     = null;   // kết quả lookup CUỐI CÙNG (đã merge logic so SĐT) — dùng khi submit
+let rawNameLookup     = null;  // kết quả THÔ từ server theo Tên — KHÔNG bị ghi đè, dùng để so khớp lại mỗi khi SĐT thay đổi
+let lookupInProgress = false;  // true trong lúc đang chờ kết quả lookup
+let lookupDoneName   = null;   // Tên đã lookup xong gần nhất (null = chưa lookup lần nào)
+let nameTimer    = null;
+let tempSelected = '';
+
+// ──────────────────────────────────────────────
+// INIT
+// ──────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const tmr = new Date(); tmr.setDate(tmr.getDate() + 1);
+  document.getElementById('deadline').value = tmr.toISOString().split('T')[0];
+
+  // Lookup kích hoạt khi rời khỏi ô TÊN (không phải SĐT nữa)
+  document.getElementById('name').addEventListener('blur', onNameBlur);
+  // Gõ lại tên → hủy kết quả lookup cũ, chờ lookup lại
+  document.getElementById('name').addEventListener('input', onNameInput);
+  // SĐT không kích hoạt lookup — chỉ dùng để SO KHỚP với SĐT đã có khi đã tìm thấy trùng tên
+  document.getElementById('phone').addEventListener('input', onPhoneInputAfterNameFound);
+
+  document.getElementById('crm-form').addEventListener('submit', onSubmit);
+});
+
+// ──────────────────────────────────────────────
+// LOOKUP THEO TÊN (bước dò đầu tiên — đúng quy trình mới)
+// ──────────────────────────────────────────────
+function onNameInput() {
+  // Tên đang được sửa lại → kết quả lookup cũ không còn đáng tin, reset toàn bộ
+  lookupResult   = null;
+  rawNameLookup  = null;
+  lookupDoneName = null;
+  hideBanner();
+  updateSubmitBtn();
+}
+
+function onNameBlur() {
+  const name = v('name');
+  if (!name) { updateSubmitBtn(); return; }
+  doLookupByName(name);
+}
+
+function doLookupByName(name) {
+  lookupInProgress = true;
+  updateSubmitBtn();
+
+  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    simulateLookupByName(name);
+    return;
+  }
+  showLoading(true);
+  jsonpLookupByName(name);
+}
+
+function jsonpLookupByName(name) {
+  const old = document.getElementById('jsonp-script');
+  if (old) old.remove();
+
+  window._jsonpCB = function(data) {
+    showLoading(false);
+    lookupInProgress = false;
+    lookupDoneName   = name;
+    rawNameLookup    = data; // LƯU NGUYÊN BẢN — không bị mất khi SĐT thay đổi sau này
+    resolveLookupByNameResult(data);
+    delete window._jsonpCB;
+    const s = document.getElementById('jsonp-script');
+    if (s) s.remove();
+  };
+
+  const script = document.createElement('script');
+  script.id = 'jsonp-script';
+  script.src = `${APPS_SCRIPT_URL}?action=lookupByName&name=${encodeURIComponent(name)}&callback=_jsonpCB`;
+  script.onerror = () => {
+    showLoading(false);
+    lookupInProgress = false;
+    showToast('❌ Lỗi kết nối kiểm tra. Bấm ra ngoài ô Tên để thử lại.', 'error-t');
+    updateSubmitBtn();
+  };
+  document.head.appendChild(script);
+}
+
+function simulateLookupByName(name) {
+  lookupInProgress = false;
+  lookupDoneName   = name;
+  // Demo: tên chứa chữ "test" (không phân biệt hoa thường) → giả lập tìm thấy trùng
+  let data;
+  if (name.toLowerCase().includes('test')) {
+    data = {
+      found: true, byName: true,
+      allRows: [394, 396, 397],
+      name: name,
+      location: 'Genkii 214 Nguyễn Xiển',
+      source: 'Facebook Ads', product: 'Genkii BES',
+      stage: 'Đã add Zalo - Tư vấn',
+      entryDate: '17/06/2026',
+      lastLog: 'Đã gọi điện trao đổi cụ thể, hẹn lịch trải nghiệm',
+      existingPhones: ['0364499691'],
+      duplicateCount: 3,
+    };
+  } else {
+    data = { found: false };
+  }
+  rawNameLookup = data; // LƯU NGUYÊN BẢN
+  resolveLookupByNameResult(data);
+}
+
+/**
+ * Xử lý kết quả lookupByName theo đúng quy tắc:
+ *  - Không tìm thấy tên trùng                → khách mới
+ *  - Tên trùng + SĐT hiện tại khớp 1 trong existingPhones → khách cũ, gộp
+ *  - Tên trùng + SĐT hiện tại khác hết        → khách mới (trùng tên ngẫu nhiên)
+ *  - Tên trùng + SĐT hiện tại đang để trống   → khách mới (chưa đủ căn cứ)
+ */
+function resolveLookupByNameResult(data) {
+  if (!data.found) {
+    applyAsNewCustomer();
+    return;
+  }
+
+  const phoneNow = v('phone').replace(/\D/g,'');
+  const existingPhones = data.existingPhones || [];
+
+  if (phoneNow && existingPhones.includes(phoneNow)) {
+    // Trùng tên + trùng SĐT → chắc chắn khách cũ
+    applyAsExistingCustomer(data);
+  } else {
+    // Trùng tên nhưng khác SĐT, hoặc chưa nhập SĐT → khách mới
+    applyAsNewCustomer(data.found ? data : null);
+  }
+}
+
+function applyAsExistingCustomer(data) {
+  lookupResult = data;
+  const banner = document.getElementById('lookup-banner');
+  const updLbl = document.getElementById('section-update-label');
+
+  setField('location', data.location, true);
+  updLbl.textContent = '3 — Cập nhật lần này (khách đã có trong CRM)';
+
+  // Yêu cầu 7: nếu khách đã từng mua hàng thành công ít nhất 1 lần, thêm dòng
+  // cảnh báo riêng ngay trong banner để Sales biết ngay đây là khách đã từng Chốt.
+  const lastPurchase = (data.purchaseHistory && data.purchaseHistory.length > 0)
+    ? data.purchaseHistory[data.purchaseHistory.length - 1]
+    : null;
+  const purchaseAlert = data.hasCompletedDeal && lastPurchase
+    ? `<div class="last-log" style="background:var(--green-lt);color:var(--green);font-style:normal;font-weight:600;">
+         🎉 Khách hàng đã từng mua hàng thành công gần nhất vào ngày ${lastPurchase.date}
+       </div>`
+    : '';
+
+  banner.className = 'found';
+  banner.innerHTML = `
+    <div class="banner-body">
+      <span class="banner-icon">✅</span>
+      <strong>Tìm thấy khách hàng trùng Tên + SĐT!</strong><br>
+      <b>${data.name}</b> — ${data.location || 'Chưa có địa chỉ'}<br>
+      Sản phẩm: ${data.product || '—'} · Vào phễu: ${data.entryDate || '—'}
+      ${data.duplicateCount > 1 ? `<br>Sẽ gộp ${data.duplicateCount} dòng trùng thành 1` : ''}
+      <div class="last-log">📝 Lần LH cuối: ${data.lastLog || 'Chưa có'}</div>
+      ${purchaseAlert}
+    </div>`;
+  banner.style.display = 'block';
+  setSelect('stage', data.stage);
+
+  // Điền sẵn giá trị hiện tại của Nguồn lead/Sản phẩm để Sales nhìn thấy,
+  // dù có thể đang bị khóa không sửa được (xem applyLockState)
+  setSelect('source', data.source);
+  setSelect('product', data.product);
+
+  renderPurchaseHistory(data.purchaseHistory || []);
+  applyLockState(!!data.isUnlocked);
+  setClickQCVisible(true); // khách cũ → cho phép đánh dấu "click lại quảng cáo"
+  updateSubmitBtn();
+}
+
+/**
+ * v2.1: bật/tắt khối "Khách click lại quảng cáo".
+ * Chỉ hiện khi form đang ở chế độ CẬP NHẬT KHÁCH CŨ (khách mới mặc định đã
+ * được tính 1 lượt qua hành động create, không cần checkbox).
+ * Mỗi lần ẩn/hiện đều bỏ tick — tránh Sales quên tick cũ gây đếm nhầm lượt.
+ */
+function setClickQCVisible(visible) {
+  const box = document.getElementById('clickqc-box');
+  const cb  = document.getElementById('clickqc');
+  if (!box || !cb) return;
+  cb.checked = false;
+  box.classList.remove('checked');
+  box.classList.toggle('visible', !!visible);
+}
+
+function onClickQCChange(cb) {
+  document.getElementById('clickqc-box').classList.toggle('checked', cb.checked);
+}
+
+/**
+ * Khóa/mở Nguồn lead và Sản phẩm theo đúng yêu cầu nghiệp vụ: chỉ mở khóa khi
+ * khách đã hoàn thành 1 vòng Chốt ở lần nhập TRƯỚC (isUnlocked do backend tính
+ * toán và trả về qua lookupByName/lookupByPhone).
+ * LƯU Ý: Nhiệt độ KHÔNG nằm trong nhóm bị khóa — đây là chỉ số thay đổi liên tục
+ * trong quá trình tư vấn (có thể giảm dần dù khách chưa Chốt), Sales luôn được
+ * cập nhật tự do ở mọi giai đoạn.
+ */
+/**
+ * Yêu cầu 7: hiển thị bảng lịch sử mua hàng ở dưới cùng form chính.
+ * Chỉ hiện khi khách có ít nhất 1 đơn hàng đã hoàn thành thật (qua nút
+ * "Hoàn thành đơn hàng"), mỗi dòng chỉ cần ngày + sản phẩm theo đúng yêu cầu.
+ */
+function renderPurchaseHistory(history) {
+  const card = document.getElementById('purchase-history-card');
+  const list = document.getElementById('purchase-history-list');
+  if (!history || history.length === 0) {
+    card.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+  list.innerHTML = history.map(h => `
+    <div class="ph-item">
+      <span class="ph-date">📅 ${h.date}</span>
+      <span class="ph-content">${h.product || 'Chưa rõ sản phẩm'}</span>
+    </div>`).join('');
+  card.style.display = 'block';
+}
+
+function applyLockState(isUnlocked) {
+  const sourceEl   = document.getElementById('source');
+  const productEl  = document.getElementById('product');
+  const sourceHint = document.getElementById('source-lock-hint');
+  const productHint= document.getElementById('product-lock-hint');
+  const sectionLbl = document.getElementById('section-source-label');
+
+  sourceEl.disabled  = !isUnlocked;
+  productEl.disabled = !isUnlocked;
+
+  sourceHint.style.display  = isUnlocked ? 'none' : 'block';
+  productHint.style.display = isUnlocked ? 'none' : 'block';
+
+  sectionLbl.innerHTML = isUnlocked
+    ? '2 — Nguồn lead & Sản phẩm <span style="color:var(--green)">/ Đã mở khóa — khách vừa hoàn thành 1 vòng Chốt</span>'
+    : '2 — Nguồn lead & Sản phẩm <span>/ chỉ sửa được sau khi khách đã Chốt 1 vòng</span>';
+}
+
+function applyAsNewCustomer(sameNameDifferentPhone) {
+  lookupResult = { found: false };
+  const banner = document.getElementById('lookup-banner');
+  const updLbl = document.getElementById('section-update-label');
+
+  clearField('location');
+  // Khách hoàn toàn mới (hoặc trùng tên khác SĐT) → luôn được nhập đầy đủ Nguồn/Sản phẩm/Nhiệt độ
+  document.getElementById('source').value  = '';
+  document.getElementById('product').value = '';
+  applyLockState(true);
+  renderPurchaseHistory([]); // khách mới chưa có lịch sử mua hàng nào
+  setClickQCVisible(false); // khách mới → không cần checkbox, create đã tự tính 1 lượt
+  updLbl.textContent = '3 — Cập nhật lần này';
+
+  if (sameNameDifferentPhone) {
+    // Trùng tên nhưng khác SĐT — cảnh báo nhẹ để Sales tự kiểm tra cho chắc,
+    // nhưng vẫn xử lý là khách MỚI theo đúng quy tắc đã thống nhất
+    banner.className = 'new';
+    banner.innerHTML = `
+      <div class="banner-body">
+        <span class="banner-icon">⚠️</span>
+        <strong>Trùng tên nhưng khác SĐT</strong> — xử lý như khách mới<br>
+        Đã có ${sameNameDifferentPhone.duplicateCount} hồ sơ tên "${sameNameDifferentPhone.name}" với SĐT khác.
+        Nếu đây thực sự là cùng 1 khách, hãy kiểm tra lại SĐT trước khi lưu.
+      </div>`;
+  } else {
+    banner.className = 'new';
+    banner.innerHTML = `
+      <div class="banner-body">
+        <span class="banner-icon">🆕</span>
+        <strong>Khách hàng mới</strong> — Chưa có trong CRM<br>
+        Điền đầy đủ thông tin bên dưới để tạo hồ sơ mới.
+      </div>`;
+  }
+  banner.style.display = 'block';
+  updateSubmitBtn();
+}
+
+// Khi Sales nhập/sửa SĐT SAU khi đã lookup theo Tên xong,
+// cần đánh giá lại xem SĐT mới gõ có khớp existingPhones không.
+// QUAN TRỌNG: dùng rawNameLookup (dữ liệu THÔ, không đổi) chứ không dùng
+// lookupResult (đã bị ghi đè thành {found:false} nếu lần trước xử lý là khách mới)
+let phoneRecheckTimer = null;
+function onPhoneInputAfterNameFound(e) {
+  e.target.value = e.target.value.replace(/\D/g,'');
+  clearTimeout(phoneRecheckTimer);
+  if (rawNameLookup !== null) {
+    // Debounce nhẹ để không đánh giá lại liên tục khi đang gõ từng số
+    phoneRecheckTimer = setTimeout(() => {
+      resolveLookupByNameResult(rawNameLookup);
+    }, 400);
+  }
+}
+
+function hideBanner() {
+  const b = document.getElementById('lookup-banner');
+  b.style.display = 'none'; b.className = '';
+  document.getElementById('section-update-label').textContent = '3 — Cập nhật lần này';
+  applyLockState(false); // mặc định khóa lại cho đến khi có kết quả lookup mới
+  renderPurchaseHistory([]); // ẩn lịch sử mua hàng cho đến khi có kết quả lookup mới
+  setClickQCVisible(false); // ẩn + bỏ tick checkbox click QC cho đến khi lookup ra khách cũ
+}
+
+// ──────────────────────────────────────────────
+// NHIỆT ĐỘ TOGGLE
+// ──────────────────────────────────────────────
+function selectTemp(btn) {
+  document.querySelectorAll('.temp-btn').forEach(b => {
+    b.classList.remove('hot','warm','cool');
+  });
+  const val = btn.dataset.val;
+  if (val === 'Nóng') btn.classList.add('hot');
+  if (val === 'Ấm')   btn.classList.add('warm');
+  if (val === 'Mát')  btn.classList.add('cool');
+  tempSelected = val;
+  document.getElementById('temp').value = val;
+}
+
+// ──────────────────────────────────────────────
+// SUBMIT
+// ──────────────────────────────────────────────
+function onSubmit(e) {
+  e.preventDefault();
+  if (!validate()) return;
+
+  const isUpdate = lookupResult && lookupResult.found;
+
+  // v2.1: cờ "Khách click lại quảng cáo" — chỉ có ý nghĩa khi đang UPDATE khách cũ.
+  // Backend sẽ ghi hành động 'update_click_qc' và tính 1 lượt nhập mới trong ngày.
+  const clickLaiQC = isUpdate && !!document.getElementById('clickqc')?.checked;
+
+  const payload = {
+    action:    isUpdate ? 'update' : 'create',
+    clickLaiQC: clickLaiQC,
+    allRows:   isUpdate ? lookupResult.allRows : null,
+    rowIndex:  isUpdate ? lookupResult.rowIndex : null,
+    sales:     v('sales'),
+    phone:     v('phone'),
+    name:      v('name'),
+    location:  v('location'),
+    source:    v('source'),
+    product:   v('product'),
+    stage:     v('stage'),
+    temp:      tempSelected,
+    content:   v('content'),
+    nextstep:  v('nextstep'),
+    deadline:  v('deadline'),
+    note:      v('note'),
+    timestamp: new Date().toLocaleString('vi-VN'),
+  };
+
+  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    console.log('📤 Payload (demo):', payload);
+    showLoading(true);
+    setTimeout(() => {
+      showLoading(false);
+      showToast(payload.action === 'update'
+        ? '✅ Đã cập nhật khách hàng!'
+        : '✅ Đã thêm khách hàng mới!', 'success');
+      resetForm();
+    }, 1200);
+    return;
+  }
+
+  showLoading(true);
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload),
+  })
+  .then(() => {
+    showLoading(false);
+    showToast('✅ Đã lưu vào CRM thành công!', 'success');
+    resetForm();
+  })
+  .catch(() => {
+    showLoading(false);
+    showToast('❌ Lỗi kết nối. Kiểm tra mạng và thử lại.', 'error-t');
+  });
+}
+
+// ──────────────────────────────────────────────
+// VALIDATE
+// ──────────────────────────────────────────────
+function validate() {
+  let ok = true;
+  // SĐT KHÔNG còn bắt buộc — bỏ khỏi danh sách required
+  const required = ['sales', 'name', 'stage', 'content', 'nextstep', 'deadline'];
+  required.forEach(id => {
+    const field = document.getElementById('f-' + id);
+    const el    = document.getElementById(id);
+    if (!el || !field) return;
+    if (!el.value.trim()) {
+      field.classList.add('error'); ok = false;
+    } else {
+      field.classList.remove('error');
+    }
+  });
+
+  // SĐT: nếu CÓ nhập thì phải hợp lệ, nếu để trống thì bỏ qua (không bắt buộc)
+  const phone = v('phone').replace(/\D/g,'');
+  if (phone && (phone.length < 9 || phone.length > 11)) {
+    document.getElementById('f-phone').classList.add('error'); ok = false;
+  } else {
+    document.getElementById('f-phone').classList.remove('error');
+  }
+
+  // CHẶN QUAN TRỌNG: không cho submit nếu lookup theo Tên đang chạy
+  // hoặc chưa từng lookup cho đúng Tên hiện tại trên form
+  const name = v('name');
+  if (name) {
+    if (lookupInProgress) {
+      showToast('⏳ Đang kiểm tra tên khách, vui lòng đợi 1-2 giây rồi bấm lại', 'error-t');
+      ok = false;
+    } else if (lookupDoneName !== name) {
+      showToast('⚠️ Hệ thống chưa kiểm tra xong tên này. Bấm ra ngoài ô Tên rồi thử lại', 'error-t');
+      document.getElementById('f-name').classList.add('error');
+      doLookupByName(name);
+      ok = false;
+    }
+  }
+
+  if (!ok && name && !lookupInProgress && lookupDoneName === name) {
+    showToast('⚠️ Vui lòng điền đầy đủ thông tin bắt buộc', 'error-t');
+  }
+  return ok;
+}
+
+// ──────────────────────────────────────────────
+// HELPERS
+// ──────────────────────────────────────────────
+const v    = id => document.getElementById(id)?.value?.trim() ?? '';
+
+function setField(id, val, filled = false) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = val || '';
+  if (filled) el.classList.add('filled');
+}
+function clearField(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = ''; el.classList.remove('filled');
+}
+function setSelect(id, val) {
+  const el = document.getElementById(id);
+  if (!el || !val) return;
+  for (let opt of el.options) {
+    if (opt.value === val || opt.text === val) { el.value = opt.value; break; }
+  }
+}
+
+function updateSubmitBtn() {
+  const btn   = document.getElementById('btn-submit');
+  const label = document.getElementById('btn-label');
+  const name  = v('name');
+
+  if (!name) {
+    btn.disabled = false;
+    label.textContent = 'Điền họ tên khách để tiếp tục';
+    return;
+  }
+  if (lookupInProgress || lookupDoneName !== name) {
+    btn.disabled = false; // vẫn cho bấm nhưng validate() sẽ chặn + tự lookup lại
+    label.textContent = '⏳ Đang kiểm tra tên khách...';
+    return;
+  }
+  btn.disabled = false;
+  label.textContent = lookupResult && lookupResult.found
+    ? '→ Cập nhật hồ sơ khách đã có'
+    : '→ Tạo hồ sơ khách mới';
+}
+
+function resetForm() {
+  document.getElementById('crm-form').reset();
+  document.querySelectorAll('.temp-btn').forEach(b => b.classList.remove('hot','warm','cool'));
+  document.querySelectorAll('.field').forEach(f => f.classList.remove('error'));
+  document.querySelectorAll('input.filled, select.filled').forEach(el => el.classList.remove('filled'));
+  tempSelected   = '';
+  lookupResult   = null;
+  rawNameLookup  = null;
+  lookupDoneName = null;
+  hideBanner();
+  const tmr = new Date(); tmr.setDate(tmr.getDate() + 1);
+  document.getElementById('deadline').value = tmr.toISOString().split('T')[0];
+
+  // form.reset() xóa luôn ô Sales (đang bị disabled sau khi đăng nhập) — cần điền
+  // lại ngay theo đúng người đang đăng nhập, không bắt Sales phải tải lại trang.
+  if (currentSalesName) {
+    setSelect('sales', currentSalesName);
+  }
+
+  updateSubmitBtn();
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = type ? `show ${type}` : 'show';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = type || ''; }, 3000);
+}
+
+function showLoading(on) {
+  document.getElementById('loading').classList.toggle('show', on);
+}
+
+// ══════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════
+function switchTab(tab) {
+  ['update', 'complete', 'tasks', 'cust', 'dash'].forEach(t => {
+    document.getElementById('tab-panel-' + t).classList.toggle('active', tab === t);
+    document.getElementById('tab-btn-' + t).classList.toggle('active', tab === t);
+  });
+  if (tab === 'tasks') loadTodayTasks();
+  if (tab === 'dash')  loadDashboard(false);
+  if (tab === 'cust')  loadCustomerList(false);
+}
+
+// ══════════════════════════════════════════════
+// TAB 2: HOÀN THÀNH ĐƠN HÀNG (yêu cầu 5, 6)
+// ══════════════════════════════════════════════
+let coLookupResult  = null; // kết quả lookupForComplete gần nhất
+let coLookupTimer   = null;
+let coLookupInProgress = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+  const nameEl  = document.getElementById('co-name');
+  const phoneEl = document.getElementById('co-phone');
+  if (nameEl && phoneEl) {
+    nameEl.addEventListener('input', scheduleCoLookup);
+    phoneEl.addEventListener('input', e => {
+      e.target.value = e.target.value.replace(/\D/g, '');
+      scheduleCoLookup();
+    });
+  }
+  const btnComplete = document.getElementById('btn-complete');
+  if (btnComplete) btnComplete.addEventListener('click', onCompleteOrder);
+});
+
+function scheduleCoLookup() {
+  clearTimeout(coLookupTimer);
+  resetCoUI();
+  const name  = v('co-name');
+  const phone = v('co-phone').replace(/\D/g, '');
+  if (!name || phone.length < 9) return;
+  coLookupInProgress = true;
+  updateCompleteBtn();
+  coLookupTimer = setTimeout(() => doLookupForComplete(name, phone), 500);
+}
+
+function resetCoUI() {
+  coLookupResult = null;
+  document.getElementById('order-info-card').classList.remove('show');
+  updateCompleteBtn();
+}
+
+function doLookupForComplete(name, phone) {
+  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    simulateLookupForComplete(name, phone);
+    return;
+  }
+  showLoading(true);
+  const old = document.getElementById('jsonp-script-co');
+  if (old) old.remove();
+
+  window._jsonpCBComplete = function(data) {
+    showLoading(false);
+    coLookupInProgress = false;
+    handleCoLookupResult(data);
+    delete window._jsonpCBComplete;
+    const s = document.getElementById('jsonp-script-co');
+    if (s) s.remove();
+  };
+
+  const script = document.createElement('script');
+  script.id = 'jsonp-script-co';
+  script.src = `${APPS_SCRIPT_URL}?action=lookupForComplete&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}&callback=_jsonpCBComplete`;
+  script.onerror = () => {
+    showLoading(false);
+    coLookupInProgress = false;
+    showToast('❌ Lỗi kết nối kiểm tra. Thử lại.', 'error-t');
+    updateCompleteBtn();
+  };
+  document.head.appendChild(script);
+}
+
+function simulateLookupForComplete(name, phone) {
+  coLookupInProgress = false;
+  // Demo: tên chứa "chot" (không phân biệt hoa thường) → giả lập khách đang ở Chốt
+  if (name.toLowerCase().includes('chot')) {
+    handleCoLookupResult({
+      found: true, eligible: true,
+      allRows: [400], name: name, phone: phone,
+      product: 'Genkii BES', stage: 'Chốt',
+      lastLog: 'Đã đặt cọc, hẹn giao máy thứ 5 tuần này',
+    });
+  } else if (name.toLowerCase().includes('test')) {
+    handleCoLookupResult({
+      found: true, eligible: false, stage: 'Đã add Zalo - Tư vấn',
+      error: 'Khách hàng đang ở giai đoạn "Đã add Zalo - Tư vấn", chưa ở giai đoạn Chốt.',
+    });
+  } else {
+    handleCoLookupResult({ found: false, error: 'Không tìm thấy khách hàng khớp đúng cả Họ Tên và SĐT trong CRM' });
+  }
+}
+
+function handleCoLookupResult(data) {
+  coLookupResult = data;
+  const card = document.getElementById('order-info-card');
+
+  if (!data.found || !data.eligible) {
+    card.classList.remove('show');
+    if (data.error) showToast('⚠️ ' + data.error, 'error-t');
+    updateCompleteBtn();
+    return;
+  }
+
+  document.getElementById('oi-name').textContent    = data.name || '—';
+  document.getElementById('oi-stage').textContent    = data.stage || '—';
+  document.getElementById('oi-product').textContent  = data.product || '—';
+  document.getElementById('oi-lastlog').textContent  = '📝 ' + (data.lastLog || 'Chưa có lịch sử liên hệ');
+  card.classList.add('show');
+  updateCompleteBtn();
+}
+
+function updateCompleteBtn() {
+  const btn   = document.getElementById('btn-complete');
+  const label = document.getElementById('btn-complete-label');
+  const name  = v('co-name');
+  const phone = v('co-phone').replace(/\D/g, '');
+
+  if (!name || phone.length < 9) {
+    btn.disabled = true; btn.style.background = 'var(--grey-3)';
+    label.textContent = 'Nhập đủ Tên + SĐT khớp đúng khách đang ở giai đoạn Chốt';
+    return;
+  }
+  if (coLookupInProgress) {
+    btn.disabled = true; btn.style.background = 'var(--grey-3)';
+    label.textContent = '⏳ Đang kiểm tra...';
+    return;
+  }
+  if (coLookupResult && coLookupResult.found && coLookupResult.eligible) {
+    btn.disabled = false; btn.style.background = 'var(--green)';
+    label.textContent = '→ Xác nhận hoàn thành đơn hàng cho khách này';
+  } else {
+    btn.disabled = true; btn.style.background = 'var(--grey-3)';
+    label.textContent = coLookupResult?.error || 'Chưa xác định được khách hàng hợp lệ';
+  }
+}
+
+function onCompleteOrder() {
+  if (!coLookupResult || !coLookupResult.found || !coLookupResult.eligible) {
+    showToast('⚠️ Chưa xác nhận được khách hàng hợp lệ', 'error-t');
+    return;
+  }
+
+  const payload = {
+    action:  'completeOrder',
+    allRows: coLookupResult.allRows,
+    phone:   coLookupResult.phone || v('co-phone').replace(/\D/g, ''),
+    sales:   currentSalesName || '', // Sales đang đăng nhập — dùng để gán cho nhiệm vụ CSKH vừa tạo
+  };
+
+  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    showLoading(true);
+    setTimeout(() => {
+      showLoading(false);
+      showToast('✅ (Demo) Đã hoàn thành đơn hàng — khách chuyển sang CSKH', 'success');
+      resetCoForm();
+    }, 1000);
+    return;
+  }
+
+  showLoading(true);
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload),
+  })
+  .then(() => {
+    showLoading(false);
+    showToast('✅ Đã hoàn thành đơn hàng — khách chuyển sang CSKH', 'success');
+    resetCoForm();
+  })
+  .catch(() => {
+    showLoading(false);
+    showToast('❌ Lỗi kết nối. Kiểm tra mạng và thử lại.', 'error-t');
+  });
+}
+
+function resetCoForm() {
+  document.getElementById('co-name').value = '';
+  document.getElementById('co-phone').value = '';
+  resetCoUI();
+}
+
+// ══════════════════════════════════════════════
+// ĐĂNG NHẬP SALES (Giai đoạn 3)
+// ══════════════════════════════════════════════
+const LOGIN_STORAGE_KEY = 'genkii_crm_logged_in_sales';
+let currentSalesName = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Khôi phục đăng nhập từ lần trước (lưu trong session của trình duyệt này)
+  try {
+    const saved = sessionStorage.getItem(LOGIN_STORAGE_KEY);
+    if (saved) {
+      currentSalesName = saved;
+      applyLoggedInState();
+    }
+  } catch (e) { /* sessionStorage có thể bị chặn ở 1 số trình duyệt — bỏ qua, yêu cầu đăng nhập lại */ }
+});
+
+function doLogin() {
+  const selectEl = document.getElementById('login-sales');
+  const phoneInput = v('login-phone').replace(/\D/g, '');
+  const errorEl = document.getElementById('login-error');
+  const selectedOption = selectEl.options[selectEl.selectedIndex];
+  const expectedPhone = selectedOption ? selectedOption.dataset.phone : '';
+
+  if (!selectEl.value || !phoneInput) {
+    errorEl.textContent = 'Vui lòng chọn Sales và nhập SĐT hotline';
+    errorEl.classList.add('show');
+    return;
+  }
+  if (phoneInput !== expectedPhone) {
+    errorEl.textContent = 'SĐT không khớp với Sales đã chọn. Vui lòng kiểm tra lại.';
+    errorEl.classList.add('show');
+    return;
+  }
+
+  errorEl.classList.remove('show');
+  currentSalesName = selectEl.value;
+  try { sessionStorage.setItem(LOGIN_STORAGE_KEY, currentSalesName); } catch (e) {}
+  applyLoggedInState();
+}
+
+function doLogout() {
+  currentSalesName = null;
+  try { sessionStorage.removeItem(LOGIN_STORAGE_KEY); } catch (e) {}
+  document.getElementById('login-screen').classList.remove('hide');
+  document.getElementById('login-sales').value = '';
+  document.getElementById('login-phone').value = '';
+}
+
+function applyLoggedInState() {
+  document.getElementById('login-screen').classList.add('hide');
+  document.getElementById('logged-in-name').textContent = currentSalesName;
+
+  const salesSelect = document.getElementById('sales');
+  if (salesSelect) {
+    setSelect('sales', currentSalesName);
+    salesSelect.disabled = true;
+  }
+
+  // Khởi động auto-refresh tab Nhiệm vụ mỗi 2 phút để đồng bộ với Sales kia
+  startAutoRefresh();
+}
+
+// ══════════════════════════════════════════════
+// TAB 3: NHIỆM VỤ HÔM NAY (Giai đoạn 3)
+// ══════════════════════════════════════════════
+function loadTodayTasks() {
+  if (!currentSalesName) return;
+  // v2.4: xóa cache thông tin khách mỗi lần tải lại danh sách — khách vừa được
+  // cập nhật giai đoạn/SĐT thì lần sổ tiếp theo hiển thị đúng dữ liệu mới
+  for (const k in taskInfoCache) delete taskInfoCache[k];
+  document.getElementById('list-nextstep').innerHTML = '<div class="task-empty">Đang tải...</div>';
+  document.getElementById('list-cskh').innerHTML = '<div class="task-empty">Đang tải...</div>';
+
+  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    simulateTodayTasks();
+    return;
+  }
+
+  const old = document.getElementById('jsonp-script-tasks');
+  if (old) old.remove();
+  window._jsonpCBTasks = function(data) {
+    renderTodayTasks(data);
+    delete window._jsonpCBTasks;
+    const s = document.getElementById('jsonp-script-tasks');
+    if (s) s.remove();
+  };
+  const script = document.createElement('script');
+  script.id = 'jsonp-script-tasks';
+  script.src = `${APPS_SCRIPT_URL}?action=getTodayTasks&sales=${encodeURIComponent(currentSalesName)}&callback=_jsonpCBTasks`;
+  script.onerror = () => showToast('❌ Lỗi tải nhiệm vụ. Bấm Làm mới để thử lại.', 'error-t');
+  document.head.appendChild(script);
+}
+
+function simulateTodayTasks() {
+  renderTodayTasks({
+    nextStepTasks: [
+      { type: 'next_step', phone: '0911111111', name: 'Khách Demo A', content: 'Gọi lại hỏi quyết định', deadline: '24/06/2026', overdue: true },
+    ],
+    cskhTasks: [
+      { type: 'cskh', rowIndex: 2, phone: '0922222222', name: 'Khách Demo B', content: 'Hỏi thăm sau mua (7 ngày)', deadline: '26/06/2026', overdue: false, taskKey: 'cskh_7' },
+    ],
+  });
+}
+
+function renderTodayTasks(data) {
+  const nsTasks = data.nextStepTasks || [];
+  const cskhTasks = data.cskhTasks || [];
+
+  const badgeNS = document.getElementById('badge-nextstep');
+  badgeNS.textContent = nsTasks.length;
+  badgeNS.classList.toggle('zero', nsTasks.length === 0);
+
+  const badgeCSKH = document.getElementById('badge-cskh');
+  badgeCSKH.textContent = cskhTasks.length;
+  badgeCSKH.classList.toggle('zero', cskhTasks.length === 0);
+
+  const listNS = document.getElementById('list-nextstep');
+  listNS.innerHTML = nsTasks.length === 0
+    ? '<div class="task-empty">🎉 Không có Next Step nào cần xử lý hôm nay</div>'
+    : nsTasks.map(t => taskCardHtml(t, 'next_step')).join('');
+
+  const listCSKH = document.getElementById('list-cskh');
+  listCSKH.innerHTML = cskhTasks.length === 0
+    ? '<div class="task-empty">🎉 Không có nhắc hỏi thăm nào đến hạn hôm nay</div>'
+    : cskhTasks.map(t => taskCardHtml(t, 'cskh')).join('');
+}
+
+function taskCardHtml(t, taskType) {
+  const escId = `${taskType}-${t.phone}-${t.rowIndex || ''}`.replace(/[^a-zA-Z0-9-]/g, '');
+  // v2.4: phần thân thẻ bấm được để sổ thông tin khách — truyền phone/name qua
+  // data-attribute để tránh lỗi escape khi tên khách chứa ký tự đặc biệt
+  const dataAttrs = `data-phone="${escapeHtml(t.phone || '')}" data-name="${escapeHtml(t.name || '')}"`;
+
+  if (t.done) {
+    const doneByStr = t.doneBy ? ` bởi ${t.doneBy}` : '';
+    return `
+      <div class="task-card done" id="card-${escId}">
+        <div class="tc-clickable" ${dataAttrs} onclick="toggleTaskInfo('${escId}', this)">
+          <div class="tc-top">
+            <span class="tc-name">${t.name || t.phone}</span>
+            <span class="tc-deadline done-badge">✅ Đã hoàn thành${doneByStr}</span>
+          </div>
+          <div class="tc-content">${t.content}</div>
+          <div class="tc-expand-hint">Thông tin khách <span class="chev">▾</span></div>
+        </div>
+        <div class="tc-info" id="tcinfo-${escId}"></div>
+      </div>`;
+  }
+
+  const deadlineLabel = t.overdue ? `⚠️ Quá hạn ${t.deadline}` : `📅 Hạn ${t.deadline}`;
+  // "Người nhập cuối - Hẹn lịch làm việc: ..." theo yêu cầu mới
+  const lastUpdateStr = t.lastUpdateSales
+    ? `<div class="tc-meta">👤 Người nhập cuối: <b>${t.lastUpdateSales}</b></div>`
+    : '';
+  return `
+    <div class="task-card ${t.overdue ? 'overdue' : ''}" id="card-${escId}">
+      <div class="tc-clickable" ${dataAttrs} onclick="toggleTaskInfo('${escId}', this)">
+        <div class="tc-top">
+          <span class="tc-name">${t.name || t.phone}</span>
+          <span class="tc-deadline">${deadlineLabel}</span>
+        </div>
+        <div class="tc-content">${t.content}</div>
+        ${lastUpdateStr}
+        <div class="tc-expand-hint">Thông tin khách <span class="chev">▾</span></div>
+      </div>
+      <div class="tc-info" id="tcinfo-${escId}"></div>
+      <div class="tc-actions">
+        <button class="tc-btn done" onclick='markTaskDone(${JSON.stringify(t)}, "${taskType}")'>✅ Hoàn thành</button>
+        <button class="tc-btn postpone" onclick='openPostponeModal(${JSON.stringify(t)}, "${taskType}")'>⏳ Dời lịch</button>
+      </div>
+    </div>`;
+}
+
+// ── v2.4: SỔ THÔNG TIN KHÁCH TRONG THẺ NHIỆM VỤ ──
+// Bấm thân thẻ → sổ ra khối thông tin cơ bản (như tab Khách hàng) để Sales
+// copy nhanh. Dữ liệu tải qua getCustomerDetail, cache lại theo khách để
+// đóng/mở nhiều lần hoặc gặp lại cùng khách ở thẻ khác không phải tải lại.
+const taskInfoCache = {};   // key (phone|name) → info object
+let taskInfoCbSeq = 0;      // đánh số callback JSONP — nhiều thẻ mở liên tiếp không giẫm nhau
+
+function toggleTaskInfo(escId, el) {
+  const card = document.getElementById('card-' + escId);
+  const box  = document.getElementById('tcinfo-' + escId);
+  if (!card || !box) return;
+
+  const isOpen = card.classList.toggle('expanded');
+  if (!isOpen) return; // vừa đóng lại — không cần làm gì thêm
+
+  const phone = el.getAttribute('data-phone') || '';
+  const name  = el.getAttribute('data-name') || '';
+  const key   = phone || name;
+  if (!key) { box.innerHTML = '<div class="tci-loading">Không có thông tin định danh khách</div>'; return; }
+
+  if (taskInfoCache[key]) { renderTaskInfo(box, taskInfoCache[key]); return; }
+
+  box.innerHTML = '<div class="tci-loading">Đang tải thông tin khách...</div>';
+
+  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    const demo = simulateCustomerDetail(name, phone).info;
+    taskInfoCache[key] = demo;
+    renderTaskInfo(box, demo);
+    return;
+  }
+
+  const cbName = '_jsonpCBTaskInfo' + (++taskInfoCbSeq);
+  window[cbName] = function(data) {
+    if (data && data.found && data.info) {
+      taskInfoCache[key] = data.info;
+      renderTaskInfo(box, data.info);
+    } else {
+      box.innerHTML = `<div class="tci-loading">${escapeHtml((data && data.error) || 'Không tìm thấy khách trong CRM')}</div>`;
+    }
+    delete window[cbName];
+    const s = document.getElementById('jsonp-' + cbName);
+    if (s) s.remove();
+  };
+  const script = document.createElement('script');
+  script.id = 'jsonp-' + cbName;
+  script.src = `${APPS_SCRIPT_URL}?action=getCustomerDetail&phone=${encodeURIComponent(phone)}&name=${encodeURIComponent(name)}&callback=${cbName}`;
+  script.onerror = () => { box.innerHTML = '<div class="tci-loading">Lỗi tải — bấm để thử lại</div>'; };
+  document.head.appendChild(script);
+}
+
+function renderTaskInfo(box, info) {
+  const rows = [
+    ['📞 SĐT', info.phone],
+    ['📍 Cơ sở/Địa chỉ', info.location],
+    ['🎯 Nguồn lead', info.source],
+    ['📦 Sản phẩm', info.product],
+    ['🚩 Giai đoạn', info.stage],
+    ['🌡 Nhiệt độ', info.temp ? (TEMP_ICON[info.temp] || '') + ' ' + info.temp : ''],
+    ['📅 Vào phễu', info.entryDate],
+    ['👤 Sales phụ trách', info.sales],
+  ];
+  box.innerHTML = rows.map(([label, value]) => `
+    <div class="tci-row" data-copy="${escapeHtml(value || '')}" data-label="${escapeHtml(label.replace(/^[^ ]+ /, ''))}" onclick="event.stopPropagation(); copyRowValue(this)">
+      <span class="tci-label">${label}</span>
+      <span class="tci-value">${escapeHtml(value) || '—'}</span>
+    </div>`).join('')
+    + '<div class="tci-hint">💡 Chạm vào dòng bất kỳ để copy nội dung</div>';
+}
+
+function copyRowValue(el) {
+  const value = el.getAttribute('data-copy') || '';
+  const label = el.getAttribute('data-label') || 'nội dung';
+  if (!value) { showToast('Chưa có dữ liệu để copy', 'error-t'); return; }
+
+  const onCopied = () => showToast(`📋 Đã copy ${label}: ${value.length > 30 ? value.substring(0, 30) + '…' : value}`, 'success');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(value).then(onCopied).catch(() => fallbackCopy(value, onCopied));
+  } else {
+    fallbackCopy(value, onCopied); // trình duyệt cũ / trang không chạy HTTPS
+  }
+}
+
+function fallbackCopy(text, onCopied) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); onCopied(); }
+  catch (e) { showToast('❌ Không copy được — vui lòng bôi đen thủ công', 'error-t'); }
+  document.body.removeChild(ta);
+}
+
+function markTaskDone(t, taskType) {
+  submitTaskUpdate({
+    taskType, rowIndex: t.rowIndex, phone: t.phone,
+    status: 'done',
+    salesName: currentSalesName || '', // ai tick Hoàn thành — ghi vào cột DONE_BY
+  }, () => {
+    showToast('✅ Đã đánh dấu hoàn thành', 'success');
+    loadTodayTasks();
+  });
+}
+
+// ── Auto-refresh tab Nhiệm vụ mỗi 2 phút để đồng bộ khi Sales kia tick xong ──
+let autoRefreshInterval = null;
+function startAutoRefresh() {
+  if (autoRefreshInterval) return;
+  autoRefreshInterval = setInterval(() => {
+    const tasksTab = document.getElementById('tab-panel-tasks');
+    if (tasksTab && tasksTab.classList.contains('active')) {
+      loadTodayTasks();
+    }
+  }, 2 * 60 * 1000); // 2 phút
+}
+// Khởi động auto-refresh sau khi đăng nhập thành công (gọi trong applyLoggedInState)
+
+let postponeTarget = null;
+function openPostponeModal(t, taskType) {
+  postponeTarget = { ...t, taskType };
+  document.getElementById('postpone-reason').value = '';
+  const tmr = new Date(); tmr.setDate(tmr.getDate() + 3);
+  document.getElementById('postpone-date').value = tmr.toISOString().split('T')[0];
+  document.getElementById('postpone-modal').classList.add('show');
+}
+
+function closePostponeModal() {
+  postponeTarget = null;
+  document.getElementById('postpone-modal').classList.remove('show');
+}
+
+function confirmPostpone() {
+  if (!postponeTarget) return;
+  const reason = v('postpone-reason');
+  const newDeadline = document.getElementById('postpone-date').value;
+  if (!newDeadline) {
+    showToast('⚠️ Vui lòng chọn ngày dự kiến mới', 'error-t');
+    return;
+  }
+
+  // Cả "next_step" và "cskh" giờ đều có dòng thật trong sheet Nhiệm vụ Sales
+  // (đều có rowIndex) — gửi đủ rowIndex cho cả 2 loại. Next Step gửi thêm phone
+  // để backend đồng bộ Deadline mới về đúng dòng khách trong CRM Tổng.
+  const payload = {
+    taskType: postponeTarget.taskType,
+    rowIndex: postponeTarget.rowIndex,
+    phone: postponeTarget.phone,
+    status: 'pending',
+    reason, newDeadline,
+  };
+
+  submitTaskUpdate(payload, () => {
+    showToast('✅ Đã dời lịch', 'success');
+    closePostponeModal();
+    loadTodayTasks();
+  });
+}
+
+function submitTaskUpdate(payload, onSuccess) {
+  payload.action = 'updateTaskStatus';
+
+  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    showLoading(true);
+    setTimeout(() => { showLoading(false); onSuccess(); }, 700);
+    return;
+  }
+
+  showLoading(true);
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload),
+  })
+  .then(() => { showLoading(false); onSuccess(); })
+  .catch(() => { showLoading(false); showToast('❌ Lỗi kết nối. Thử lại.', 'error-t'); });
+}
+
+// ══════════════════════════════════════════════
+// TAB 4: DASHBOARD (v2.2)
+// ══════════════════════════════════════════════
+let dashCharts = {};        // giữ instance Chart.js để destroy trước khi vẽ lại
+let dashLastLoaded = 0;     // timestamp lần tải gần nhất — tránh gọi lại liên tục khi bấm qua lại tab
+
+function loadDashboard(force) {
+  if (!currentSalesName) return;
+  // Backend đã cache 5 phút; phía client chỉ chặn gọi lại trong 60s khi
+  // chuyển qua lại tab. Bấm "Làm mới" (force=true) thì luôn gọi.
+  if (!force && Date.now() - dashLastLoaded < 60000) return;
+
+  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    renderDashboard(simulateDashboardData());
+    return;
+  }
+
+  document.getElementById('dash-time').textContent = 'Đang tải...';
+  const old = document.getElementById('jsonp-script-dash');
+  if (old) old.remove();
+  window._jsonpCBDash = function(data) {
+    renderDashboard(data);
+    dashLastLoaded = Date.now();
+    delete window._jsonpCBDash;
+    const s = document.getElementById('jsonp-script-dash');
+    if (s) s.remove();
+  };
+  const script = document.createElement('script');
+  script.id = 'jsonp-script-dash';
+  script.src = `${APPS_SCRIPT_URL}?action=getDashboardData${force ? '&fresh=1' : ''}&callback=_jsonpCBDash`;
+  script.onerror = () => {
+    document.getElementById('dash-time').textContent = 'Lỗi tải dữ liệu';
+    showToast('❌ Lỗi tải Dashboard. Bấm Làm mới để thử lại.', 'error-t');
+  };
+  document.head.appendChild(script);
+}
+
+function renderDashboard(d) {
+  if (!d || d.error) {
+    document.getElementById('dash-time').textContent = 'Lỗi: ' + (d && d.error ? d.error : 'không rõ');
+    return;
+  }
+  document.getElementById('dash-time').textContent = 'Cập nhật lúc ' + (d.generatedAt || '');
+
+  // ── KPI ──
+  const t = d.today || {};
+  document.getElementById('kpi-tong').textContent = t.tongLuot ?? 0;
+  document.getElementById('kpi-moi').textContent  = t.khachMoi ?? 0;
+  document.getElementById('kpi-qc').textContent   = t.clickQC ?? 0;
+  document.getElementById('kpi-qc-uniq').textContent = (t.uniqueQC ?? 0) + ' khách unique';
+  document.getElementById('kpi-overdue').textContent = d.totalOverdue ?? 0;
+  const deltaEl = document.getElementById('kpi-delta');
+  const delta = t.delta ?? 0;
+  if (delta > 0)      { deltaEl.textContent = '▲ +' + delta + ' so với hôm qua'; deltaEl.className = 'kpi-sub up'; }
+  else if (delta < 0) { deltaEl.textContent = '▼ ' + delta + ' so với hôm qua';  deltaEl.className = 'kpi-sub down'; }
+  else                { deltaEl.textContent = 'bằng hôm qua';                    deltaEl.className = 'kpi-sub'; }
+
+  // ── Biểu đồ 14 ngày (cột chồng) ──
+  const daily = d.daily || [];
+  drawChart('daily', 'chart-daily', {
+    type: 'bar',
+    data: {
+      labels: daily.map(x => x.label),
+      datasets: [
+        { label: 'Khách mới',    data: daily.map(x => x.khachMoi), backgroundColor: '#2a8a7e', stack: 's', borderRadius: { topLeft: 3, topRight: 3 } },
+        { label: 'Click lại QC', data: daily.map(x => x.clickQC),  backgroundColor: '#c8922a', stack: 's' },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9.5 }, color: '#9aa3af', autoSkip: false, maxRotation: 60 } },
+        y: { stacked: true, grid: { color: '#eef0f3' }, ticks: { precision: 0, font: { size: 10 }, color: '#9aa3af' } },
+      },
+    },
+  });
+
+  // ── Phễu giai đoạn (thanh ngang) ──
+  const funnel = d.funnel || [];
+  document.getElementById('chart-funnel-box').style.height = Math.max(150, funnel.length * 34 + 40) + 'px';
+  const FUNNEL_COLORS = { 'Inbox': '#8fb8e8', 'SĐT - Chưa add Zalo': '#5a92d6', 'Đã add Zalo - Tư vấn': '#2f6bb5', 'Chốt': '#1a2e44', 'CSKH': '#2a8a7e', 'Khách cũ': '#7bbfb5', 'Khách yêu cầu đặc biệt': '#c8922a', 'Không tiềm năng': '#c9ced6' };
+  drawChart('funnel', 'chart-funnel', {
+    type: 'bar',
+    data: {
+      labels: funnel.map(x => x.stage),
+      datasets: [{ data: funnel.map(x => x.count), backgroundColor: funnel.map(x => FUNNEL_COLORS[x.stage] || '#9aa3af'), borderRadius: { topRight: 3, bottomRight: 3 } }],
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: '#eef0f3' }, ticks: { precision: 0, font: { size: 10 }, color: '#9aa3af' } },
+        y: { grid: { display: false }, ticks: { font: { size: 10.5 }, color: '#5a6473' } },
+      },
+    },
+  });
+
+  // ── Nguồn lead (doughnut) ──
+  const src = (d.sources && d.sources.items) || [];
+  document.getElementById('src-title').textContent =
+    d.sources && d.sources.scope === 'all' ? 'Nguồn lead — toàn bộ (tháng này chưa có khách mới)' : 'Nguồn lead tháng này';
+  const SRC_COLORS = ['#2a8a7e', '#1a2e44', '#c8922a', '#5a92d6', '#c0392b', '#7bbfb5', '#9aa3af', '#d6a2ad'];
+  const srcTotal = src.reduce((s, x) => s + x.count, 0) || 1;
+  document.getElementById('src-legend').innerHTML = src.map((x, i) =>
+    `<span><i style="background:${SRC_COLORS[i % SRC_COLORS.length]}"></i>${escapeHtml(x.name)} ${Math.round(x.count * 100 / srcTotal)}%</span>`
+  ).join('');
+  drawChart('src', 'chart-src', {
+    type: 'doughnut',
+    data: { labels: src.map(x => x.name), datasets: [{ data: src.map(x => x.count), backgroundColor: src.map((x, i) => SRC_COLORS[i % SRC_COLORS.length]), borderWidth: 2, borderColor: '#ffffff' }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { display: false } } },
+  });
+
+  // ── Bảng Sales ──
+  const tbody = document.querySelector('#sales-table tbody');
+  const sales = d.sales || [];
+  tbody.innerHTML = sales.length === 0
+    ? '<tr><td colspan="5" class="dash-empty">Chưa có hoạt động nào trong tháng</td></tr>'
+    : sales.map(s => `
+      <tr>
+        <td>${escapeHtml(s.name)}</td>
+        <td>${s.luot}</td>
+        <td>${s.khachMoi}</td>
+        <td>${s.don}</td>
+        <td class="${s.quaHan > 0 ? 'oh' : ''}">${s.quaHan}</td>
+      </tr>`).join('');
+}
+
+function drawChart(key, canvasId, config) {
+  if (typeof Chart === 'undefined') return; // CDN chưa tải xong/bị chặn — bỏ qua, số liệu KPI vẫn hiện
+  if (dashCharts[key]) { dashCharts[key].destroy(); }
+  dashCharts[key] = new Chart(document.getElementById(canvasId), config);
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function simulateDashboardData() {
+  const daily = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    daily.push({ label: String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0'), khachMoi: 5 + Math.floor(Math.random() * 10), clickQC: Math.floor(Math.random() * 5) });
+  }
+  return {
+    generatedAt: new Date().toLocaleString('vi-VN'),
+    today: { khachMoi: 8, clickQC: 3, tongLuot: 11, uniqueQC: 2, delta: 2 },
+    daily: daily,
+    funnel: [{ stage: 'Inbox', count: 24 }, { stage: 'Đã add Zalo - Tư vấn', count: 31 }, { stage: 'Chốt', count: 7 }, { stage: 'CSKH', count: 15 }],
+    sources: { scope: 'month', items: [{ name: 'Facebook Ads', count: 32 }, { name: 'TikTok', count: 14 }, { name: 'Website', count: 8 }, { name: 'Khách cũ', count: 6 }] },
+    sales: [{ name: 'Nguyễn Thị Thùy Linh', luot: 41, khachMoi: 35, don: 4, quaHan: 1 }, { name: 'Ngô Vũ', luot: 12, khachMoi: 9, don: 2, quaHan: 0 }],
+    totalOverdue: 3,
+  };
+}
+
+// ══════════════════════════════════════════════
+// TAB: KHÁCH HÀNG (v2.3) — danh sách + chi tiết
+// ══════════════════════════════════════════════
+let custData = null;        // {customers:[...]} — dữ liệu list gần nhất
+let custLastLoaded = 0;
+let custCurrentDetail = null; // {name, phone} khách đang mở chi tiết
+
+const STAGE_BADGE_CLASS = {
+  'Inbox': 'st-inbox',
+  'SĐT - Chưa add Zalo': 'st-sdt',
+  'Đã add Zalo - Tư vấn': 'st-tuvan',
+  'Chốt': 'st-chot',
+  'CSKH': 'st-cskh',
+  'Khách cũ': 'st-khachcu',
+  'Không tiềm năng': 'st-ktn',
+};
+const TEMP_ICON = { 'Nóng': '🔴', 'Ấm': '🟡', 'Mát': '🟢' };
+
+function loadCustomerList(force) {
+  if (!currentSalesName) return;
+  if (!force && custData && Date.now() - custLastLoaded < 60000) { renderCustomerList(); return; }
+
+  document.getElementById('cust-count-label').textContent = 'Đang tải...';
+
+  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    custData = simulateCustomerList();
+    custLastLoaded = Date.now();
+    buildCustomerFilters(); renderCustomerList();
+    return;
+  }
+
+  const old = document.getElementById('jsonp-script-cust');
+  if (old) old.remove();
+  window._jsonpCBCust = function(data) {
+    custData = data;
+    custLastLoaded = Date.now();
+    buildCustomerFilters();
+    renderCustomerList();
+    delete window._jsonpCBCust;
+    const s = document.getElementById('jsonp-script-cust');
+    if (s) s.remove();
+  };
+  const script = document.createElement('script');
+  script.id = 'jsonp-script-cust';
+  script.src = `${APPS_SCRIPT_URL}?action=getCustomerList${force ? '&fresh=1' : ''}&callback=_jsonpCBCust`;
+  script.onerror = () => {
+    if (!custData) document.getElementById('cust-count-label').textContent = 'Lỗi tải dữ liệu';
+    else renderCustomerList(); // vẫn còn dữ liệu cũ → hiện lại nhãn đếm bình thường
+    showToast('❌ Lỗi tải danh sách. Bấm Làm mới để thử lại.', 'error-t');
+  };
+  document.head.appendChild(script);
+}
+
+// Dựng option cho 2 bộ lọc từ chính dữ liệu (giai đoạn/Sales nào có mặt mới hiện)
+function buildCustomerFilters() {
+  const customers = (custData && custData.customers) || [];
+  const stages = {}, salesSet = {};
+  customers.forEach(c => { if (c.stage) stages[c.stage] = 1; if (c.sales) salesSet[c.sales] = 1; });
+
+  const fillSelect = (id, values, allLabel) => {
+    const el = document.getElementById(id);
+    const cur = el.value;
+    el.innerHTML = `<option value="">${allLabel}</option>` +
+      Object.keys(values).sort().map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
+    if (cur && values[cur]) el.value = cur; // giữ lựa chọn cũ nếu vẫn hợp lệ
+  };
+  fillSelect('cust-filter-stage', stages, 'Tất cả giai đoạn');
+  fillSelect('cust-filter-sales', salesSet, 'Tất cả Sales');
+}
+
+function renderCustomerList() {
+  const listEl = document.getElementById('cust-list');
+  const customers = (custData && custData.customers) || [];
+
+  const q = (document.getElementById('cust-search').value || '').trim().toLowerCase();
+  const fStage = document.getElementById('cust-filter-stage').value;
+  const fSales = document.getElementById('cust-filter-sales').value;
+
+  const filtered = customers.filter(c => {
+    if (fStage && c.stage !== fStage) return false;
+    if (fSales && c.sales !== fSales) return false;
+    if (q) {
+      const hay = (c.name + ' ' + c.phone).toLowerCase();
+      if (hay.indexOf(q) === -1) return false;
+    }
+    return true;
+  });
+
+  const overdueCount = filtered.filter(c => c.overdue).length;
+  document.getElementById('cust-count-label').textContent =
+    `${filtered.length}/${customers.length} khách` + (overdueCount ? ` · ${overdueCount} quá hạn` : '');
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = '<div class="dash-empty">Không có khách nào khớp bộ lọc</div>';
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(c => {
+    const badgeCls = STAGE_BADGE_CLASS[c.stage] || '';
+    const temp = TEMP_ICON[c.temp] || '';
+    const next = c.nextstep
+      ? `<div class="cc-next">
+           <span class="cc-ns">➜ ${escapeHtml(c.nextstep)}</span>
+           <span class="cc-dl ${c.overdue ? 'overdue' : ''}">${c.overdue ? '⚠ ' : ''}${escapeHtml(c.deadline || '')}</span>
+         </div>`
+      : '';
+    return `
+      <div class="cust-card" onclick="openCustomerDetail('${escapeHtml(c.phone)}','${escapeHtml(c.name).replace(/'/g, '&#39;')}')">
+        <div class="cc-top">
+          <div class="cc-name">${escapeHtml(c.name) || '(chưa có tên)'}</div>
+          <span class="cc-temp">${temp}</span>
+          <span class="stage-badge ${badgeCls}">${escapeHtml(c.stage) || '—'}</span>
+        </div>
+        <div class="cc-mid">
+          <span>📞 ${escapeHtml(c.phone) || 'chưa có SĐT'}</span>
+          ${c.sales ? `<span>· 👤 ${escapeHtml(c.sales)}</span>` : ''}
+        </div>
+        ${next}
+      </div>`;
+  }).join('');
+}
+
+// ── CHI TIẾT 1 KHÁCH ──
+function openCustomerDetail(phone, name) {
+  custCurrentDetail = { phone: phone || '', name: name || '' };
+  document.getElementById('cust-list-view').style.display = 'none';
+  document.getElementById('cust-detail-view').style.display = 'block';
+  document.getElementById('cd-name').textContent = name || phone || '—';
+  switchDetailTab('info');
+  document.getElementById('cd-sec-info').innerHTML = '<div class="dash-empty">Đang tải...</div>';
+  document.getElementById('cd-sec-history').innerHTML = '';
+  document.getElementById('cd-sec-tasks').innerHTML = '';
+
+  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    renderCustomerDetail(simulateCustomerDetail(name, phone));
+    return;
+  }
+
+  const old = document.getElementById('jsonp-script-custd');
+  if (old) old.remove();
+  window._jsonpCBCustD = function(data) {
+    renderCustomerDetail(data);
+    delete window._jsonpCBCustD;
+    const s = document.getElementById('jsonp-script-custd');
+    if (s) s.remove();
+  };
+  const script = document.createElement('script');
+  script.id = 'jsonp-script-custd';
+  script.src = `${APPS_SCRIPT_URL}?action=getCustomerDetail&phone=${encodeURIComponent(phone)}&name=${encodeURIComponent(name)}&callback=_jsonpCBCustD`;
+  script.onerror = () => showToast('❌ Lỗi tải chi tiết khách. Thử lại.', 'error-t');
+  document.head.appendChild(script);
+}
+
+function backToCustomerList() {
+  custCurrentDetail = null;
+  document.getElementById('cust-detail-view').style.display = 'none';
+  document.getElementById('cust-list-view').style.display = 'block';
+}
+
+function switchDetailTab(sub) {
+  ['info', 'history', 'tasks'].forEach(t => {
+    document.getElementById('cd-tab-' + t).classList.toggle('active', sub === t);
+    document.getElementById('cd-sec-' + t).classList.toggle('active', sub === t);
+  });
+}
+
+const ACTION_LABEL = {
+  'create':              { text: 'Tạo mới',        cls: 'a-create' },
+  'update':              { text: 'Cập nhật',       cls: '' },
+  'update_click_qc':     { text: 'Click lại QC',   cls: 'a-qc' },
+  'hoan_thanh_don_hang': { text: 'Hoàn thành đơn', cls: 'a-don' },
+};
+
+function renderCustomerDetail(d) {
+  if (!d || !d.found) {
+    document.getElementById('cd-sec-info').innerHTML =
+      `<div class="dash-empty">${escapeHtml((d && d.error) || 'Không tìm thấy khách hàng')}</div>`;
+    return;
+  }
+  const info = d.info || {};
+  document.getElementById('cd-name').textContent = info.name || custCurrentDetail.name || '—';
+
+  // Tab Thông tin
+  const rows = [
+    ['📞 SĐT', info.phone], ['📍 Cơ sở/Địa chỉ', info.location],
+    ['🎯 Nguồn lead', info.source], ['📦 Sản phẩm', info.product],
+    ['🚩 Giai đoạn', info.stage], ['🌡 Nhiệt độ', info.temp ? (TEMP_ICON[info.temp] || '') + ' ' + info.temp : ''],
+    ['📅 Vào phễu', info.entryDate], ['👤 Sales phụ trách', info.sales],
+  ];
+  let infoHtml = '<div class="cd-info-card">' + rows.map(([l, v]) =>
+    `<div class="cd-info-row"><span class="ci-label">${l}</span><span class="ci-value">${escapeHtml(v) || '—'}</span></div>`
+  ).join('') + '</div>';
+  if (info.hasCompletedDeal && info.purchaseHistory && info.purchaseHistory.length) {
+    infoHtml += '<div class="cd-info-card" style="margin-top:10px;">' +
+      `<div class="cd-info-row"><span class="ci-label">🎉 Đã mua hàng</span><span class="ci-value">${info.purchaseHistory.length} lần</span></div>` +
+      info.purchaseHistory.map(p =>
+        `<div class="cd-info-row"><span class="ci-label">${escapeHtml(String(p.date || ''))}</span><span class="ci-value">${escapeHtml(p.product) || 'Chưa rõ sản phẩm'}</span></div>`
+      ).join('') + '</div>';
+  }
+  document.getElementById('cd-sec-info').innerHTML = infoHtml;
+
+  // Tab Lịch sử — timeline mới nhất trên cùng
+  const history = d.history || [];
+  document.getElementById('cd-sec-history').innerHTML = history.length === 0
+    ? '<div class="dash-empty">Chưa có lịch sử liên hệ</div>'
+    : history.map(h => {
+        const a = ACTION_LABEL[h.action] || { text: h.action || '—', cls: '' };
+        return `
+        <div class="hist-item">
+          <div class="hi-top">
+            <span class="hi-date">🕐 ${escapeHtml(h.date)}</span>
+            <span class="hi-action ${a.cls}">${a.text}</span>
+          </div>
+          <div class="hi-content">${escapeHtml(h.content) || '(không có nội dung)'}</div>
+          <div class="hi-meta">
+            ${h.stage ? 'Giai đoạn: ' + escapeHtml(h.stage) : ''}
+            ${h.nextstep ? ' · Next: ' + escapeHtml(h.nextstep) : ''}
+            ${h.sales ? ' · ' + escapeHtml(h.sales) : ''}
+          </div>
+        </div>`;
+      }).join('');
+
+  // Tab Nhiệm vụ
+  const tasks = d.tasks || [];
+  document.getElementById('cd-sec-tasks').innerHTML = tasks.length === 0
+    ? '<div class="dash-empty">Chưa có nhiệm vụ nào cho khách này</div>'
+    : tasks.map(t => `
+      <div class="cd-task ${t.done ? 'is-done' : ''}">
+        <div class="ct-main">
+          <div>${escapeHtml(t.content) || '(không có nội dung)'}</div>
+          <div class="ct-dl">⏰ ${escapeHtml(t.deadline) || '—'}${t.done && t.doneBy ? ' · ✔ ' + escapeHtml(t.doneBy) : ''}</div>
+        </div>
+        <span class="ct-status ${t.done ? 'done' : 'open'}">${t.done ? 'Hoàn thành' : 'Đang mở'}</span>
+      </div>`).join('');
+}
+
+// Bấm "Cập nhật khách này" → nhảy sang tab Nhập/Cập nhật, điền sẵn Tên + SĐT
+// và kích hoạt đúng luồng lookup chuẩn (đảm bảo mọi quy tắc khóa trường vẫn chạy)
+function gotoUpdateFromDetail() {
+  if (!custCurrentDetail) return;
+  switchTab('update');
+  const nameEl = document.getElementById('name');
+  const phoneEl = document.getElementById('phone');
+  nameEl.value = custCurrentDetail.name || '';
+  nameEl.classList.add('filled');
+  phoneEl.value = custCurrentDetail.phone || '';
+  if (custCurrentDetail.phone) phoneEl.classList.add('filled');
+  onNameInput();                      // reset kết quả lookup cũ
+  if (nameEl.value) doLookupByName(nameEl.value); // chạy lookup như khi Sales tự gõ
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── DEMO DATA (chỉ dùng khi chưa cấu hình URL) ──
+function simulateCustomerList() {
+  return { customers: [
+    { name: 'Nguyễn Thị Lan', phone: '0901234567', stage: 'Đã add Zalo - Tư vấn', temp: 'Nóng', nextstep: 'Gửi bảng hoàn vốn BES', deadline: '01/07/2026', overdue: true, sales: 'Nguyễn Thị Thùy Linh', source: 'Facebook Ads', product: 'Genkii BES', entryDate: '20/06/2026', lastContact: '02/07/2026' },
+    { name: 'Trần Văn Minh', phone: '0912345678', stage: 'CSKH', temp: 'Ấm', nextstep: '', deadline: '', overdue: false, sales: 'Ngô Vũ', source: 'TikTok', product: 'ZEN+', entryDate: '15/06/2026', lastContact: '01/07/2026' },
+  ], generatedAt: new Date().toLocaleString('vi-VN') };
+}
+function simulateCustomerDetail(name, phone) {
+  return { found: true,
+    info: { name: name, phone: phone, location: 'Hà Nội', source: 'Facebook Ads', product: 'Genkii BES', stage: 'Đã add Zalo - Tư vấn', temp: 'Nóng', entryDate: '20/06/2026', sales: 'Nguyễn Thị Thùy Linh', hasCompletedDeal: false, purchaseHistory: [] },
+    history: [
+      { date: '02/07/2026 14:30', action: 'update', stage: 'Đã add Zalo - Tư vấn', content: 'Khách hỏi kỹ về hoàn vốn, hẹn tuần sau quyết định', nextstep: 'Gửi bảng hoàn vốn', sales: 'Nguyễn Thị Thùy Linh', product: 'Genkii BES' },
+      { date: '20/06/2026 09:15', action: 'create', stage: 'Inbox', content: 'Khách inbox từ quảng cáo Reel 0604', nextstep: 'Xin SĐT add Zalo', sales: 'Nguyễn Thị Thùy Linh', product: 'Genkii BES' },
+    ],
+    tasks: [ { loai: 'next_step', content: 'Gửi bảng hoàn vốn BES', deadline: '01/07/2026', done: false, doneDate: '', doneBy: '' } ],
+  };
+}
+</script>
 </body>
 </html>
